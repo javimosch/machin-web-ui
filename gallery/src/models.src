@@ -22,6 +22,60 @@ func demo_table() (h) {
     h = ui_table([]string{"app", "domain", "status"}, rows)
 }
 
+// --- sortable data table (shared: server SSRs the initial sort, the client
+// re-sorts + re-renders the same markup on header clicks) ---
+func tbl_data() (xs) {
+    xs = []string{
+        "machin-vault", "backups", "3120",
+        "grepapi", "search", "18455",
+        "hart", "artifacts", "912",
+        "crmd", "crm", "4408"}
+}
+
+func tbl_is_num(s) (ok) {
+    ok = len(s) > 0
+    i := 0
+    while i < len(s) {
+        if index("0123456789", charat(s, i)) < 0 { ok = false }
+        i = i + 1
+    }
+}
+
+func tbl_less(a, b) (yes) {
+    if tbl_is_num(a) && tbl_is_num(b) { yes = parse_int(a) < parse_int(b)  return }
+    yes = a < b
+}
+
+func tbl_markup(col, asc) (h) {
+    data := tbl_data()
+    n := len(data) / 3
+    idx := []int{}
+    i := 0
+    while i < n { idx = append(idx, i)  i = i + 1 }
+    // insertion sort of row indexes by the chosen column
+    i = 1
+    while i < n {
+        j := i
+        while j > 0 {
+            a := data[idx[j] * 3 + col]
+            b := data[idx[j - 1] * 3 + col]
+            swap := false
+            if asc { swap = tbl_less(a, b) } else { swap = tbl_less(b, a) }
+            if swap == false { break }
+            t := idx[j]
+            idx[j] = idx[j - 1]
+            idx[j - 1] = t
+            j = j - 1
+        }
+        i = i + 1
+    }
+    rows := []string{}
+    for _, r := range idx {
+        rows = append(rows, ui_tr(ui_td(ui_esc(data[r * 3])) + ui_td(ui_esc(data[r * 3 + 1])) + ui_td(ui_esc(data[r * 3 + 2]))))
+    }
+    h = ui_data_table([]string{"app", "domain", "reqs"}, rows, col, asc, "sort_by")
+}
+
 // one gallery tile: an anchored wrapper around a card ("wide" spans 2 columns)
 func tile(id, wide, title, body) (h) {
     c := "min-w-0"
@@ -147,6 +201,7 @@ func app_view(count_frag, panel_frag, pg_frag, slider_val_frag) (h) {
     form = form + ui_checkbox("tos", "Enable backups", true) + ui_switch("dark", "Dark mode", false)
     form = form + "</div>"
     form = form + ui_radio_group("plan", []string{"Hobby", "Pro", "Scale"}, "Pro")
+    form = form + ui_form_field("Region", ui_combobox("region", "type to filter…", []string{"eu-west (Paris)", "eu-central (Frankfurt)", "us-east (Virginia)", "us-west (Oregon)", "ap-south (Mumbai)"}, ""), "combobox: palette mechanics, form-shaped — the pick becomes the input value")
     form = form + "</div>"
 
     alerts := "<div class=\"flex flex-col gap-3\">"
@@ -238,12 +293,12 @@ func app_view(count_frag, panel_frag, pg_frag, slider_val_frag) (h) {
     grid = grid + tile("sec-structure", true, "Structure", structure)
     grid = grid + tile("sec-accordion", false, "Accordion", faq)
     grid = grid + tile("sec-empty-state", false, "Empty state", ui_empty_state("No deployments yet", "Scaffold an app and ship it — the whole loop is one binary and one command.", ui_button("machin-web-ui init", "ghost", "")))
-    grid = grid + tile("sec-table", false, "Table", demo_table())
+    grid = grid + tile("sec-table", false, "Table", demo_table() + "<p class=\"mb-3 mt-6 text-xs font-medium uppercase tracking-wider text-stone-400\">sortable (click a header)</p><div id=\"dtable\">" + tbl_markup(0, true) + "</div>")
     grid = grid + tile("sec-overlays", false, "Overlays", overlays)
     grid = grid + "</div>"
 
     content := "<div class=\"" + ui_content_classes() + "\">"
-    content = content + ui_banner("top-banner", "58 components and counting &mdash; <span class=\"text-stone-300\">press ctrl+K for the command palette</span>", "banner_close")
+    content = content + ui_banner("top-banner", "58 components and counting &mdash; <span class=\"text-stone-300 dark:text-stone-600\">press ctrl+K for the command palette</span>", "banner_close")
     content = content + gallery_hero()
     content = content + ui_section_header("Components", "Every tile is live: SSR'd, hydrated, engine-styled.", ui_button("Browse registry", "ghost", "drw_open"))
     content = content + grid
@@ -270,5 +325,5 @@ func app_view(count_frag, panel_frag, pg_frag, slider_val_frag) (h) {
         "Open drawer", "drw_open", "registry",
         "Open dialog", "dlg_open", "",
         "Reset counter", "reset", ""})
-    h = h + ui_toast("toast", "toast_msg", "green", false)
+    h = h + ui_toast_stack("toasts")
 }

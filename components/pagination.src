@@ -3,8 +3,8 @@
 
 func ui_page_btn(label, arg, active, disabled) (h) {
     c := "inline-flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-sm transition"
-    if active { c = c + " border-stone-900 bg-stone-900 text-white" }
-    else { c = c + " border-stone-200 bg-white text-stone-900 hover:bg-stone-100" }
+    if active { c = c + " border-stone-900 bg-stone-900 text-white dark:border-stone-100 dark:bg-stone-100 dark:text-stone-900" }
+    else { c = c + " border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800" }
     dis := ""
     if disabled { dis = " disabled"  c = c + " opacity-50" }
     h = "<button class=\"" + c + "\" data-action=\"page\" data-arg=\"" + str(arg) + "\"" + dis + ">" + ui_esc(label) + "</button>"

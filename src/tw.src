@@ -759,6 +759,7 @@ func tw_rule(cls, c, kf_done) (css, ok) {
     sel := "." + tw_escape(cls)
     prefix := ""
     visited := false
+    placeholder := false
     medias := []string{}
     i := 0
     while i < len(parts) - 1 {
@@ -767,6 +768,7 @@ func tw_rule(cls, c, kf_done) (css, ok) {
             sel = sel + ":" + v
             if v == "visited" { visited = true }
         }
+        else if v == "placeholder" { placeholder = true }
         else if v == "group-hover" { prefix = ".group:hover " }
         else if v == "group-focus" { prefix = ".group:focus " }
         else if v == "peer-hover" { prefix = ".peer:hover ~ " }
@@ -789,7 +791,12 @@ func tw_rule(cls, c, kf_done) (css, ok) {
             d = replace(d, "/ var(--tw-" + vn + "-opacity, 1))", ")")
         }
     }
-    css = prefix + sel + sfx + " {\n  " + d + "\n}"
+    // ::placeholder emits a -moz-prefixed twin rule (matching Tailwind)
+    if placeholder {
+        css = prefix + sel + "::-moz-placeholder" + sfx + " {\n  " + d + "\n}\n" + prefix + sel + "::placeholder" + sfx + " {\n  " + d + "\n}"
+    } else {
+        css = prefix + sel + sfx + " {\n  " + d + "\n}"
+    }
     if has_prefix(base, "animate-") {
         name := substr(base, 8, len(base))
         key := name + "|" + join(medias, "|")
@@ -870,6 +877,37 @@ func sort_by_rank(xs) (out) {
     while i < len(out) {
         j := i
         while j > 0 && tw_rank(out[j]) < tw_rank(out[j - 1]) {
+            t := out[j]
+            out[j] = out[j - 1]
+            out[j - 1] = t
+            j = j - 1
+        }
+        i = i + 1
+    }
+}
+
+// variant depth: how many variant prefixes a class carries. Variant rules must
+// come AFTER base rules in the cascade (dark:text-stone-900 must beat
+// text-white inside its media query), and deeper stacks after shallower ones —
+// Tailwind emits base utilities first, then each variant layer.
+func tw_variant_depth(cls) (d) {
+    d = 0
+    i := 0
+    while i < len(cls) {
+        c := charat(cls, i)
+        if c == "[" { break }
+        if c == ":" { d = d + 1 }
+        i = i + 1
+    }
+}
+
+// stable sort by variant depth (primary), preserving alpha + rank order within
+func sort_by_depth(xs) (out) {
+    out = xs
+    i := 1
+    while i < len(out) {
+        j := i
+        while j > 0 && tw_variant_depth(out[j]) < tw_variant_depth(out[j - 1]) {
             t := out[j]
             out[j] = out[j - 1]
             out[j - 1] = t

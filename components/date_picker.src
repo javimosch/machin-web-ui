@@ -4,7 +4,7 @@
 // For a custom month-grid picker with range selection, see calendar.src.
 
 func ui_date_classes() (c) {
-    c = "rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-300 focus:border-stone-300"
+    c = "rounded-md border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-3 py-2 text-sm text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-stone-300 dark:focus:ring-stone-600 focus:border-stone-300 dark:focus:border-stone-600"
 }
 
 func ui_date_input(typ, name, value) (h) {

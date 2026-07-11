@@ -11,7 +11,7 @@ func ui_log_level_class(level) (c) {
 }
 
 func ui_log_line(time, level, msg) (h) {
-    h = "<div class=\"flex gap-3\"><span class=\"shrink-0 text-stone-500\">" + ui_esc(time) + "</span>"
+    h = "<div class=\"flex gap-3\"><span class=\"shrink-0 text-stone-500 dark:text-stone-400\">" + ui_esc(time) + "</span>"
     h = h + "<span class=\"w-12 shrink-0 uppercase " + ui_log_level_class(level) + "\">" + ui_esc(level) + "</span>"
     h = h + "<span class=\"min-w-0 text-stone-200\">" + ui_esc(msg) + "</span></div>"
 }

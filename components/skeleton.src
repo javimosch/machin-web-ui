@@ -2,9 +2,9 @@
 // blocks to sketch the layout being loaded.
 
 func ui_skeleton_bar(w_class) (h) {
-    h = "<div class=\"h-4 animate-pulse rounded bg-stone-200 " + w_class + "\"></div>"
+    h = "<div class=\"h-4 animate-pulse rounded bg-stone-200 dark:bg-stone-700 " + w_class + "\"></div>"
 }
 
 func ui_skeleton_block(extra_classes) (h) {
-    h = "<div class=\"animate-pulse rounded-md bg-stone-200 " + extra_classes + "\"></div>"
+    h = "<div class=\"animate-pulse rounded-md bg-stone-200 dark:bg-stone-700 " + extra_classes + "\"></div>"
 }

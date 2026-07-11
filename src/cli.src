@@ -156,7 +156,7 @@ func cmd_css(a) {
     } else {
         if len(paths) == 0 { paths = append(paths, ".") }
         for _, p := range paths { classes = scan_path(classes, p) }
-        classes = sort_by_rank(sort_strings(classes))
+        classes = sort_by_depth(sort_by_rank(sort_strings(classes)))
     }
     css := tw_css_mode(classes, warn)
     if preflight { css = tw_preflight() + css }

@@ -146,6 +146,8 @@ def param_corpus():
         c += [f"group-hover:{b}", f"group-focus:{b}",
               f"peer-hover:{b}", f"peer-focus:{b}", f"peer-checked:{b}", f"peer-disabled:{b}"]
     # stacking with the new variants
+    c += ["placeholder:text-stone-400", "placeholder:text-red-500/50", "dark:placeholder:text-stone-500",
+          "focus:placeholder:text-stone-300", "md:placeholder:text-stone-400"]
     c += ["md:group-hover:bg-stone-700", "dark:peer-checked:underline",
           "hover:ring-2", "focus:ring-blue-500", "md:divide-y", "dark:divide-stone-700",
           "hover:-translate-y-1", "md:opacity-75", "hover:bg-red-500/90", "md:w-[13px]",

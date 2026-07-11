@@ -52,7 +52,7 @@ machin-web-ui check <class...>   # JSON per class: resolves? to which rule?
 ## Components
 
 Flat minimalist design (warm stone monochrome, hairline borders, pale pastel
-accents, no heavy shadows) — **57 components**: accordion, alert, avatar,
+accents, no heavy shadows) — **59 components**: accordion, alert, avatar,
 badge, banner, breadcrumb, button, calendar (custom month grid with range
 selection, pure-MFL date math), card, chart (sparkline/bars/donut as pure-MFL
 inline SVG), chat (agent transcript), checkbox, chips, code_block,
@@ -60,9 +60,17 @@ command_palette (ctrl-K), copy_field, date_picker (native date/datetime/time
 + ranges), desc_list, dialog, diff_view, drawer, dropdown, empty_state,
 file_upload, footer, form_field, heatmap, hero, input, kbd, layout
 (shell/grid/split), list_group, log_view, navbar, otp_input, pagination,
-popover, progress, radio_group, rating, section_header, select, separator,
-sidebar, skeleton, slider, spinner, stat, steps, switch, table, tabs,
-textarea, timeline, toast, tooltip, tree (+ `ui` base helpers). The layout
+popover, progress, radio_group, rating, section_header, combobox (autocomplete: the picked option IS the form value),
+data_table (sortable headers), select, separator, sidebar, skeleton, slider,
+spinner, stat, steps, switch, table, tabs, textarea, timeline, toast
+(single + STACKED with queueing and auto-expiry), tooltip, tree (+ `ui` base
+helpers).
+
+**Dark mode**: every component carries `dark:` classes (Tailwind's default
+media strategy — follows the OS). Inverted ink surfaces (primary buttons,
+banners, chat bubbles), deep pastel washes, re-asserted accents. Verified in
+the E2E by emulating `prefers-color-scheme: dark` and asserting computed
+colors. The layout
 family (ui_shell + sidebar + content grid) powers the gallery's own
 full-wide docs layout. Interactive controls
 are no-JS where possible: checkbox/radio/switch are sr-only native inputs

@@ -174,7 +174,13 @@ def main():
     pairs = [("border-stone-200", "border-l-green-600"), ("border-x-red-500", "border-t-red-500"),
              ("m-4", "mt-2"), ("px-4", "pl-2"), ("my-2", "mb-8"),
              ("inset-0", "top-4"), ("inset-0", "inset-y-2"), ("gap-2", "gap-x-4"),
-             ("overflow-hidden", "overflow-y-scroll")]
+             ("overflow-hidden", "overflow-y-scroll"),
+             # variant layers come after base utilities
+             ("text-white", "dark:text-stone-900"), ("bg-stone-900", "dark:bg-stone-100"),
+             ("bg-stone-300", "peer-checked:bg-stone-900"),
+             ("peer-checked:bg-stone-900", "dark:peer-checked:bg-stone-100"),
+             ("hover:bg-stone-100", "dark:hover:bg-stone-800"),
+             ("bg-white", "hover:bg-stone-100")]
     order_ok = True
     for a, b in pairs:
         (HERE / "orderfix.src").write_text(f'func v() (h) {{ h = "{a} {b}" }}\n')

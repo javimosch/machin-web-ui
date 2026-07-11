@@ -2,7 +2,7 @@
 // generous padding, no shadow. `title` may be "" for a plain container.
 
 func ui_card_classes() (c) {
-    c = "rounded-lg border border-stone-200 bg-white p-6"
+    c = "rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-6"
 }
 
 func ui_card(title, body) (h) {

@@ -1,0 +1,22 @@
+// data_table.src — sortable data table: header cells are buttons carrying
+// data-action=`action` and data-arg=<column>, with an arrow on the active
+// sort column. The APP owns the data and the sort (see the gallery client:
+// sort + rebuild rows + dom_mount the container wholesale). Build rows with
+// ui_tr/ui_td from table.src.
+
+func ui_data_table(headers, rows, sort_col, sort_asc, action) (h) {
+    h = "<table class=\"w-full text-left text-sm\"><thead><tr class=\"border-b border-stone-200 dark:border-stone-800\">"
+    i := 0
+    for _, hd := range headers {
+        arrow := ""
+        if i == sort_col {
+            arrow = " &darr;"
+            if sort_asc { arrow = " &uarr;" }
+        }
+        h = h + "<th class=\"py-0 pr-4\"><button class=\"py-2 text-xs font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400 transition hover:text-stone-900 dark:hover:text-stone-100\" data-action=\"" + action + "\" data-arg=\"" + str(i) + "\">" + ui_esc(hd) + arrow + "</button></th>"
+        i = i + 1
+    }
+    h = h + "</tr></thead><tbody>"
+    for _, r := range rows { h = h + r }
+    h = h + "</tbody></table>"
+}

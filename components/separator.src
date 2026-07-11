@@ -3,16 +3,16 @@
 
 func ui_separator(label) (h) {
     if len(label) == 0 {
-        h = "<hr class=\"border-stone-200\">"
+        h = "<hr class=\"border-stone-200 dark:border-stone-800\">"
         return
     }
     h = "<div class=\"flex items-center gap-3\">"
-    h = h + "<hr class=\"flex-1 border-stone-200\">"
+    h = h + "<hr class=\"flex-1 border-stone-200 dark:border-stone-800\">"
     h = h + "<span class=\"text-xs uppercase tracking-wider text-stone-400\">" + ui_esc(label) + "</span>"
-    h = h + "<hr class=\"flex-1 border-stone-200\">"
+    h = h + "<hr class=\"flex-1 border-stone-200 dark:border-stone-800\">"
     h = h + "</div>"
 }
 
 func ui_separator_v() (h) {
-    h = "<span class=\"h-4 w-px bg-stone-200\"></span>"
+    h = "<span class=\"h-4 w-px bg-stone-200 dark:bg-stone-700\"></span>"
 }

@@ -11,7 +11,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await Page.enable(); await Runtime.enable();
   const errs = [];
   Runtime.exceptionThrown(e => errs.push(e.exceptionDetails.text + ' ' + (e.exceptionDetails.exception?.description || '').slice(0,200)));
-  await Page.navigate({ url: process.env.GALLERY_URL || 'http://localhost:48124/' }); await Page.loadEventFired(); await sleep(600);
+  const URL = process.env.GALLERY_URL || 'http://localhost:48124/';
+  await Page.navigate({ url: URL }); await Page.loadEventFired(); await sleep(600);
   const ev = async (x) => (await Runtime.evaluate({ expression: x, returnByValue: true })).result.value;
 
   const r = {};
@@ -78,10 +79,38 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await ev(`document.querySelector('[data-action="banner_close"]').click()`); await sleep(80);
   r.bannerGone = await ev(`document.getElementById('top-banner').classList.contains('hidden')`);
 
-  await ev(`document.querySelector('[data-action="notify"]').click()`); await sleep(120);
-  r.toastVisible = await ev(`!document.getElementById('toast').classList.contains('hidden')`);
-  r.toastMsg = await ev(`document.querySelector('[data-s="toast_msg"]').textContent`);
+  // toast stack: three notifies -> three stacked toasts; dismiss one; auto-expire
+  await ev(`document.querySelector('[data-action="notify"]').click()`); await sleep(60);
+  await ev(`document.querySelector('[data-action="notify"]').click()`); await sleep(60);
+  await ev(`document.querySelector('[data-action="notify"]').click()`); await sleep(100);
+  r.toasts3 = await ev(`document.querySelectorAll('#toasts [data-action="toast_dismiss"]').length`);
+  await ev(`document.querySelector('#toasts [data-action="toast_dismiss"]').click()`); await sleep(100);
+  r.toasts2 = await ev(`document.querySelectorAll('#toasts [data-action="toast_dismiss"]').length`);
+  await sleep(2700);
+  r.toasts0 = await ev(`document.querySelectorAll('#toasts [data-action="toast_dismiss"]').length`);
+
+  // combobox: focus opens, typing filters, click picks
+  await ev(`document.querySelector('[data-combo-input]').click()`); await sleep(80);
+  r.comboOpen = await ev(`!document.querySelector('[data-combo-list]').classList.contains('hidden')`);
+  await ev(`const ci = document.querySelector('[data-combo-input]'); ci.value = 'frank'; ci.dispatchEvent(new Event('input', {bubbles: true}))`); await sleep(80);
+  r.comboFiltered = await ev(`[...document.querySelectorAll('[data-combo-opt]')].filter(el => !el.classList.contains('hidden')).length`);
+  await ev(`[...document.querySelectorAll('[data-combo-opt]')].find(el => !el.classList.contains('hidden')).click()`); await sleep(80);
+  r.comboValue = await ev(`document.querySelector('[data-combo-input]').value`);
+  r.comboClosed = await ev(`document.querySelector('[data-combo-list]').classList.contains('hidden')`);
+
+  // sortable data table: initial asc by app; click reqs -> numeric asc; again -> desc
+  r.sortFirst0 = await ev(`document.querySelector('#dtable tbody tr td').textContent`);
+  await ev(`document.querySelector('#dtable [data-action="sort_by"][data-arg="2"]').click()`); await sleep(100);
+  r.sortNumAsc = await ev(`document.querySelector('#dtable tbody tr td').textContent`);
+  await ev(`document.querySelector('#dtable [data-action="sort_by"][data-arg="2"]').click()`); await sleep(100);
+  r.sortNumDesc = await ev(`document.querySelector('#dtable tbody tr td').textContent`);
   r.errors = errs;
+  // dark mode: emulate prefers-color-scheme dark, reload, check computed colors
+  await c.Emulation.setEmulatedMedia({ features: [{ name: 'prefers-color-scheme', value: 'dark' }] });
+  await Page.navigate({ url: URL }); await Page.loadEventFired(); await sleep(500);
+  r.darkBody = await ev(`getComputedStyle(document.body).backgroundColor`);
+  r.darkCard = await ev(`getComputedStyle(document.querySelector('#sec-buttons section')).backgroundColor`);
+
   console.log(JSON.stringify(r, null, 1));
   await c.close(); chrome.kill();
   const pass = r.count0==='0' && r.count3==='3' && r.countReset==='0' && r.panel0!==r.panel1 &&
@@ -89,7 +118,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     r.calMonth0 === 'July 2026' && r.calMonth1 === 'August 2026' &&
     r.calRange.includes('2026-08-03') && r.calRange.includes('2026-08-12') && r.calInked && r.calWashed &&
     r.palHidden && r.palOpen && r.palFiltered === 1 && r.palOpenedDrawer && r.palClosed &&
-    r.sliderVal === '72%' && r.stars5 === 5 && r.chips0 === 4 && r.chips1 === 3 && r.bannerGone && r.toastVisible &&
-    r.toastMsg==='count is 0' && errs.length===0;
+    r.sliderVal === '72%' && r.stars5 === 5 && r.chips0 === 4 && r.chips1 === 3 && r.bannerGone &&
+    r.toasts3 === 3 && r.toasts2 === 2 && r.toasts0 === 0 &&
+    r.comboOpen && r.comboFiltered === 1 && r.comboValue.includes('Frankfurt') && r.comboClosed &&
+    r.sortFirst0 === 'crmd' && r.sortNumAsc === 'hart' && r.sortNumDesc === 'grepapi' &&
+    r.darkBody === 'rgb(12, 10, 9)' && r.darkCard === 'rgb(28, 25, 23)' && errs.length===0;
   console.log(pass ? 'GALLERY E2E PASS' : 'GALLERY E2E FAIL'); process.exit(pass?0:1);
 })().catch(e=>{console.error(e);chrome.kill();process.exit(1)});

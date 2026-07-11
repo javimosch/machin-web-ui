@@ -5,7 +5,7 @@ func ui_progress(pct) (h) {
     p := pct
     if p < 0 { p = 0 }
     if p > 100 { p = 100 }
-    h = "<div class=\"h-2 w-full overflow-hidden rounded-full bg-stone-200\">"
-    h = h + "<div class=\"h-2 rounded-full bg-stone-900 transition\" style=\"width:" + str(p) + "%\"></div>"
+    h = "<div class=\"h-2 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700\">"
+    h = h + "<div class=\"h-2 rounded-full bg-stone-900 transition dark:bg-stone-100\" style=\"width:" + str(p) + "%\"></div>"
     h = h + "</div>"
 }

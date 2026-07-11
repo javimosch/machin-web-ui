@@ -3,9 +3,9 @@
 // change; "" for static chips).
 
 func ui_chip(label, idx, remove_action) (h) {
-    h = "<span class=\"inline-flex items-center gap-1 rounded-full bg-stone-100 py-0.5 pl-2.5 pr-1 text-xs font-medium text-stone-700\">" + ui_esc(label)
+    h = "<span class=\"inline-flex items-center gap-1 rounded-full bg-stone-100 dark:bg-stone-800 py-0.5 pl-2.5 pr-1 text-xs font-medium text-stone-700 dark:text-stone-300\">" + ui_esc(label)
     if len(remove_action) > 0 {
-        h = h + "<button class=\"rounded-full px-1 text-stone-400 transition hover:bg-stone-200 hover:text-stone-900\" data-action=\"" + remove_action + "\" data-arg=\"" + str(idx) + "\">&times;</button>"
+        h = h + "<button class=\"rounded-full px-1 text-stone-400 transition hover:bg-stone-200 dark:hover:bg-stone-700 hover:text-stone-900 dark:hover:text-stone-100\" data-action=\"" + remove_action + "\" data-arg=\"" + str(idx) + "\">&times;</button>"
     }
     h = h + "</span>"
 }

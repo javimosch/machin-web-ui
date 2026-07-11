@@ -12,7 +12,7 @@ func ui_esc(s) (e) {
 // ui_page wraps body markup in the app shell: warm bone canvas, centered
 // column, system font stack (minimalist editorial style — no webfonts, no CDN).
 func ui_page_classes() (c) {
-    c = "min-h-screen bg-stone-50 text-stone-900 antialiased"
+    c = "min-h-screen bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-100 antialiased"
 }
 
 func ui_main_classes() (c) {

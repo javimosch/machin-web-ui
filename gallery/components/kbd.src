@@ -1,7 +1,7 @@
 // kbd.src — keystroke chip: a physical-key look for shortcuts and commands.
 
 func ui_kbd(keys) (h) {
-    h = "<kbd class=\"rounded border border-stone-200 bg-stone-100 px-1.5 py-0.5 text-xs text-stone-900\">" + ui_esc(keys) + "</kbd>"
+    h = "<kbd class=\"rounded border border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-800 px-1.5 py-0.5 text-xs text-stone-900 dark:text-stone-100\">" + ui_esc(keys) + "</kbd>"
 }
 
 // a sequence like ["ctrl", "K"] with + separators
