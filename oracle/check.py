@@ -161,6 +161,14 @@ def main():
         print(f"our engine flagged {len(toks)} unknown: {' '.join(toks[:20])}{' ...' if len(toks) > 20 else ''}")
     ok &= diff(f"corpus ({len(classes)} classes)", oracle, normalize2(r.stdout))
 
+    # 1b. darkMode 'class': same corpus, dark: variants become :is(.dark *)
+    (HERE / "tailwind.class.config.js").write_text(
+        "module.exports = { content: [\"./content.html\"], corePlugins: { preflight: false }, darkMode: 'class' }\n")
+    oracle_class = normalize2(run_oracle("content.html", config="tailwind.class.config.js", out="oracle_class.css"))
+    r = subprocess.run([str(binary), "css", "--no-preflight", "--dark-class", "-"], input="\n".join(classes),
+                       capture_output=True, text=True, check=True)
+    ok &= diff("corpus darkMode:class", oracle_class, normalize2(r.stdout))
+
     # 2. scanner: both engines scan the same MFL fixture file
     (HERE / "tailwind.fixture.config.js").write_text(
         'module.exports = { content: ["./fixture/*.src"], corePlugins: { preflight: false } }\n')

@@ -20,6 +20,7 @@ type TwCtx struct {
     bs map[string]string
     ins map[string]string
     kf map[string]string
+    dc bool
 }
 
 func tw_ctx() (c) {
@@ -760,6 +761,7 @@ func tw_rule(cls, c, kf_done) (css, ok) {
     prefix := ""
     visited := false
     placeholder := false
+    dark_is := false
     medias := []string{}
     i := 0
     while i < len(parts) - 1 {
@@ -780,7 +782,9 @@ func tw_rule(cls, c, kf_done) (css, ok) {
         else if v == "lg" { medias = append(medias, "(min-width: 1024px)") }
         else if v == "xl" { medias = append(medias, "(min-width: 1280px)") }
         else if v == "2xl" { medias = append(medias, "(min-width: 1536px)") }
-        else if v == "dark" { medias = append(medias, "(prefers-color-scheme: dark)") }
+        else if v == "dark" {
+            if c.dc { dark_is = true } else { medias = append(medias, "(prefers-color-scheme: dark)") }
+        }
         else { ok = false  return }
         i = i + 1
     }
@@ -791,6 +795,8 @@ func tw_rule(cls, c, kf_done) (css, ok) {
             d = replace(d, "/ var(--tw-" + vn + "-opacity, 1))", ")")
         }
     }
+    // darkMode 'class': :is(.dark *) sits after pseudo-classes, before pseudo-elements
+    if dark_is { sel = sel + ":is(.dark *)" }
     // ::placeholder emits a -moz-prefixed twin rule (matching Tailwind)
     if placeholder {
         css = prefix + sel + "::-moz-placeholder" + sfx + " {\n  " + d + "\n}\n" + prefix + sel + "::placeholder" + sfx + " {\n  " + d + "\n}"
@@ -817,8 +823,11 @@ func tw_rule(cls, c, kf_done) (css, ok) {
 // warn=true (explicit class lists): unknown classes are reported in a header
 // comment. warn=false (file-scan mode): non-resolving tokens are just code, skip
 // them silently — Tailwind's own JIT semantics.
-func tw_css_mode(classes, warn) (out) {
+// dark_class: darkMode 'class' — dark: variants target .dark ancestors
+// (:is(.dark *)) instead of the prefers-color-scheme media query.
+func tw_css_mode(classes, warn, dark_class) (out) {
     c := tw_ctx()
+    c.dc = dark_class
     kf_done := make(map[string]bool)
     seen := make(map[string]bool)
     unknown := []string{}
@@ -838,7 +847,7 @@ func tw_css_mode(classes, warn) (out) {
     if warn && len(unknown) > 0 { out = "/* tw-unknown: " + join(unknown, " ") + " */\n" + out }
 }
 
-func tw_css(classes) (out) { out = tw_css_mode(classes, true) }
+func tw_css(classes) (out) { out = tw_css_mode(classes, true, false) }
 
 // tw_rank orders same-property conflicts the way Tailwind does: shorthand
 // utilities (all sides) before axis (x/y) before single-side, so `border-l-red-500`

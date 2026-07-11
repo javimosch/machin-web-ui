@@ -16,6 +16,7 @@ const env = {
   // app effects
   toast_show: (id) => { const el = document.getElementById(cstr(id)); if (!el) return; el.classList.remove('hidden'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.add('hidden'), 2500); },
   dom_show: (id, on) => { document.getElementById(cstr(id))?.classList.toggle('hidden', !Number(on)); },
+  toggle_dark: () => { const on = document.documentElement.classList.toggle('dark'); const sw = document.querySelector('input[name="dark"]'); if (sw) sw.checked = on; },
   after: (ms, key) => { setTimeout(() => instance.exports.timer_fired?.(BigInt(key)), Number(ms)); },
   tab_mark: (nav, idx, onCls, offCls) => { [...document.getElementById(cstr(nav)).children].forEach((el, i) => { el.className = i === Number(idx) ? cstr(onCls) : cstr(offCls); }); },
 };
@@ -25,6 +26,11 @@ const wasi = { fd_write: () => 0, fd_seek: () => 0, fd_close: () => 0, fd_fdstat
 const { instance } = await WebAssembly.instantiateStreaming(fetch('app.wasm'), { env, wasi_snapshot_preview1: wasi });
 mem = instance.exports.memory;
 instance.exports._initialize?.();
+// darkMode 'class': boot from the OS preference; the Dark mode switch toggles it
+const dk = matchMedia('(prefers-color-scheme: dark)').matches;
+document.documentElement.classList.toggle('dark', dk);
+const dksw = document.querySelector('input[name="dark"]');
+if (dksw) dksw.checked = dk;
 instance.exports.start();
 
 // delegate clicks: <button data-action="bump" data-arg="0"> calls exports.bump(0n);

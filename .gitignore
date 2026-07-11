@@ -16,3 +16,5 @@ oracle/probe_*
 oracle/orderfix.src
 oracle/tailwind.order.config.js
 src/embed_gen.src
+oracle/tailwind.class.config.js
+oracle/class_probe.css

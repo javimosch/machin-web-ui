@@ -9,6 +9,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const c = await CDP({ port: 9781 });
   const { Page, Runtime } = c;
   await Page.enable(); await Runtime.enable();
+  await c.Emulation.setEmulatedMedia({ features: [{ name: 'prefers-color-scheme', value: 'light' }] });
   const errs = [];
   Runtime.exceptionThrown(e => errs.push(e.exceptionDetails.text + ' ' + (e.exceptionDetails.exception?.description || '').slice(0,200)));
   const URL = process.env.GALLERY_URL || 'http://localhost:48124/';
@@ -105,11 +106,15 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await ev(`document.querySelector('#dtable [data-action="sort_by"][data-arg="2"]').click()`); await sleep(100);
   r.sortNumDesc = await ev(`document.querySelector('#dtable tbody tr td').textContent`);
   r.errors = errs;
-  // dark mode: emulate prefers-color-scheme dark, reload, check computed colors
-  await c.Emulation.setEmulatedMedia({ features: [{ name: 'prefers-color-scheme', value: 'dark' }] });
-  await Page.navigate({ url: URL }); await Page.loadEventFired(); await sleep(500);
+  // dark mode (class strategy): the switch toggles .dark on <html>
+  r.lightStart = await ev(`!document.documentElement.classList.contains('dark')`);
+  await ev(`document.querySelector('[data-action="theme"]').click()`); await sleep(120);
+  r.darkOn = await ev(`document.documentElement.classList.contains('dark')`);
   r.darkBody = await ev(`getComputedStyle(document.body).backgroundColor`);
   r.darkCard = await ev(`getComputedStyle(document.querySelector('#sec-buttons section')).backgroundColor`);
+  r.darkSwitchChecked = await ev(`document.querySelector('input[name="dark"]').checked`);
+  await ev(`document.querySelector('[data-action="theme"]').click()`); await sleep(120);
+  r.lightAgain = await ev(`!document.documentElement.classList.contains('dark') && getComputedStyle(document.body).backgroundColor === 'rgb(250, 250, 249)'`);
 
   console.log(JSON.stringify(r, null, 1));
   await c.close(); chrome.kill();
@@ -122,6 +127,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     r.toasts3 === 3 && r.toasts2 === 2 && r.toasts0 === 0 &&
     r.comboOpen && r.comboFiltered === 1 && r.comboValue.includes('Frankfurt') && r.comboClosed &&
     r.sortFirst0 === 'crmd' && r.sortNumAsc === 'hart' && r.sortNumDesc === 'grepapi' &&
-    r.darkBody === 'rgb(12, 10, 9)' && r.darkCard === 'rgb(28, 25, 23)' && errs.length===0;
+    r.lightStart && r.darkOn && r.darkBody === 'rgb(12, 10, 9)' && r.darkCard === 'rgb(28, 25, 23)' && r.darkSwitchChecked && r.lightAgain && errs.length===0;
   console.log(pass ? 'GALLERY E2E PASS' : 'GALLERY E2E FAIL'); process.exit(pass?0:1);
 })().catch(e=>{console.error(e);chrome.kill();process.exit(1)});

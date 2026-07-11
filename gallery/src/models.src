@@ -198,7 +198,7 @@ func app_view(count_frag, panel_frag, pg_frag, slider_val_frag) (h) {
     form = form + ui_form_field("Notes", ui_textarea("notes", "anything the deploy agent should know", 3, ""), "")
     form = form + ui_separator("no-JS controls, styled via peer-checked")
     form = form + "<div class=\"flex flex-wrap items-center gap-6\">"
-    form = form + ui_checkbox("tos", "Enable backups", true) + ui_switch("dark", "Dark mode", false)
+    form = form + ui_checkbox("tos", "Enable backups", true) + ui_switch("dark", "Dark mode", false, "theme")
     form = form + "</div>"
     form = form + ui_radio_group("plan", []string{"Hobby", "Pro", "Scale"}, "Pro")
     form = form + ui_form_field("Region", ui_combobox("region", "type to filter…", []string{"eu-west (Paris)", "eu-central (Frankfurt)", "us-east (Virginia)", "us-west (Oregon)", "ap-south (Mumbai)"}, ""), "combobox: palette mechanics, form-shaped — the pick becomes the input value")

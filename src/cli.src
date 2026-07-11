@@ -25,7 +25,7 @@ func usage() {
     println("  machin-web-ui init [dir]                                     scaffold an isomorphic app (SSR + reactive wasm)")
     println("  machin-web-ui add <component...> [--dir d]                   vendor component source into ./components/")
     println("  machin-web-ui list                                           component registry (JSON)")
-    println("  machin-web-ui css [paths...] [-o out.css] [--no-preflight]   scan files -> stylesheet")
+    println("  machin-web-ui css [paths...] [-o out.css] [--no-preflight] [--dark-class]   scan files -> stylesheet")
     println("  machin-web-ui css - [--no-preflight]                         class list on stdin -> stylesheet")
     println("  machin-web-ui coverage                                       implemented Tailwind surface (JSON)")
     println("  machin-web-ui check <class...>                               resolve classes (JSON)")
@@ -130,6 +130,7 @@ func cmd_css(a) {
     paths := []string{}
     outfile := ""
     preflight := true
+    dark_class := false
     stdin_mode := false
     i := 2
     while i < len(a) {
@@ -139,6 +140,7 @@ func cmd_css(a) {
             if i < len(a) { outfile = a[i] }
         }
         else if arg == "--no-preflight" { preflight = false }
+        else if arg == "--dark-class" { dark_class = true }
         else if arg == "-" { stdin_mode = true }
         else { paths = append(paths, arg) }
         i = i + 1
@@ -158,7 +160,7 @@ func cmd_css(a) {
         for _, p := range paths { classes = scan_path(classes, p) }
         classes = sort_by_depth(sort_by_rank(sort_strings(classes)))
     }
-    css := tw_css_mode(classes, warn)
+    css := tw_css_mode(classes, warn, dark_class)
     if preflight { css = tw_preflight() + css }
     if len(outfile) > 0 {
         write_file(outfile, css)
@@ -215,6 +217,7 @@ func cmd_coverage() {
     out = out + "  \"verification\": \"differential-tested vs the tailwindcss standalone binary (oracle/check.py): rule-for-rule identical output on the full corpus\",\n"
     out = out + "  \"palette\": " + str(len(tw_palette())) + ",\n"
     out = out + "  \"preflight\": \"tailwind base (reset + --tw-* variable defaults), " + str(len(tw_preflight())) + " bytes, generated from the oracle; disable with --no-preflight\",\n"
+    out = out + "  \"darkMode\": \"media by default; --dark-class emits :is(.dark *) selectors (darkMode: class) for a manual toggle\",\n"
     out = out + "  \"variants\": [\"hover\", \"focus\", \"active\", \"disabled\", \"visited\", \"focus-within\", \"focus-visible\", \"group-hover\", \"group-focus\", \"peer-hover\", \"peer-focus\", \"peer-checked\", \"peer-disabled\", \"dark\", \"sm\", \"md\", \"lg\", \"xl\", \"2xl\"],\n"
     out = out + "  \"variantStacking\": true,\n"
     out = out + "  \"cascadeOrder\": \"same-property conflicts emit shorthand -> axis -> side, matching Tailwind (oracle-checked pairs); exotic same-plugin combos (e.g. inline + inline-block on one element) may order differently\",\n"

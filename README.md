@@ -66,11 +66,13 @@ spinner, stat, steps, switch, table, tabs, textarea, timeline, toast
 (single + STACKED with queueing and auto-expiry), tooltip, tree (+ `ui` base
 helpers).
 
-**Dark mode**: every component carries `dark:` classes (Tailwind's default
-media strategy — follows the OS). Inverted ink surfaces (primary buttons,
-banners, chat bubbles), deep pastel washes, re-asserted accents. Verified in
-the E2E by emulating `prefers-color-scheme: dark` and asserting computed
-colors. The layout
+**Dark mode**: every component carries `dark:` classes. Two strategies, both
+oracle-verified: the default media strategy (follows the OS), or
+`css --dark-class` for **darkMode: 'class'** — `dark:` variants become
+`:is(.dark *)` selectors so a `.dark` class on `<html>` drives the theme.
+The gallery uses class mode: its Dark mode switch flips the theme live
+(boot syncs from the OS preference), asserted in the E2E with computed
+colors both ways. The layout
 family (ui_shell + sidebar + content grid) powers the gallery's own
 full-wide docs layout. Interactive controls
 are no-JS where possible: checkbox/radio/switch are sr-only native inputs
