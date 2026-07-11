@@ -114,37 +114,62 @@ def normalize2(css):
     parse(css, 0, [])
     return out
 
+def run_oracle(content_path, config="tailwind.config.js", input_css="input.css", out="oracle.css"):
+    subprocess.run([str(ROOT / "bin/tailwindcss"), "-c", config, "-i", input_css, "-o", out],
+                   cwd=HERE, check=True, capture_output=True)
+    return (HERE / out).read_text()
+
+def show(name, s):
+    print(f"\n== {name}: {len(s)} ==")
+    for media, sel, decls in sorted(s, key=lambda x: x[1])[:25]:
+        m = f" @media[{', '.join(sorted(media))}]" if media else ""
+        print(f"  {sel}{m}\n    {'; '.join(sorted(decls))}")
+
+def diff(label, oracle, ours):
+    missing, extra = oracle - ours, ours - oracle
+    print(f"{label}: oracle rules: {len(oracle)} | ours: {len(ours)}")
+    if missing: show(f"{label} ORACLE-ONLY (we're wrong/missing)", missing)
+    if extra: show(f"{label} OURS-ONLY (we emit, oracle doesn't)", extra)
+    return not missing and not extra
+
 def main():
+    binary = ROOT / "machin-web-ui"
+    ok = True
+
+    # 1. corpus: explicit class list, every family x variant
     classes = corpus()
     (HERE / "classes.txt").write_text("\n".join(classes) + "\n")
-    # oracle
     (HERE / "content.html").write_text('<i class="' + " ".join(classes) + '"></i>')
-    subprocess.run([str(ROOT / "bin/tailwindcss"), "-c", str(HERE / "tailwind.config.js"),
-                    "-i", str(HERE / "input.css"), "-o", str(HERE / "oracle.css")],
-                   cwd=HERE, check=True, capture_output=True)
-    oracle = normalize2((HERE / "oracle.css").read_text())
-    # ours
-    r = subprocess.run([str(ROOT / "twgen")], input="\n".join(classes),
+    oracle = normalize2(run_oracle("content.html"))
+    r = subprocess.run([str(binary), "css", "--no-preflight", "-"], input="\n".join(classes),
                        capture_output=True, text=True, check=True)
     (HERE / "ours.css").write_text(r.stdout)
     unknown = re.search(r"/\* tw-unknown:(.*?)\*/", r.stdout, flags=re.S)
-    ours = normalize2(r.stdout)
-
-    missing = oracle - ours     # oracle emits, we don't (or differ)
-    extra = ours - oracle       # we emit, oracle doesn't (or differ)
-    print(f"corpus: {len(classes)} classes | oracle rules: {len(oracle)} | ours: {len(ours)}")
     if unknown:
         toks = unknown.group(1).split()
         print(f"our engine flagged {len(toks)} unknown: {' '.join(toks[:20])}{' ...' if len(toks) > 20 else ''}")
-    def show(name, s):
-        print(f"\n== {name}: {len(s)} ==")
-        for media, sel, decls in sorted(s, key=lambda x: x[1])[:25]:
-            m = f" @media[{', '.join(sorted(media))}]" if media else ""
-            print(f"  {sel}{m}\n    {'; '.join(sorted(decls))}")
-    if missing: show("ORACLE-ONLY (we're wrong/missing)", missing)
-    if extra: show("OURS-ONLY (we emit, oracle doesn't)", extra)
-    if not missing and not extra:
-        print("\nPASS: rule-for-rule identical with tailwindcss v3.4.17")
+    ok &= diff(f"corpus ({len(classes)} classes)", oracle, normalize2(r.stdout))
+
+    # 2. scanner: both engines scan the same MFL fixture file
+    (HERE / "tailwind.fixture.config.js").write_text(
+        'module.exports = { content: ["./fixture/*.src"], corePlugins: { preflight: false } }\n')
+    oracle_scan = normalize2(run_oracle(None, config="tailwind.fixture.config.js", out="oracle_scan.css"))
+    r = subprocess.run([str(binary), "css", "--no-preflight", str(HERE / "fixture")],
+                       capture_output=True, text=True, check=True)
+    ok &= diff("scanner (oracle/fixture)", oracle_scan, normalize2(r.stdout))
+
+    # 3. preflight: our embedded @tailwind base == the oracle's, byte-identical
+    oracle_base = run_oracle(None, config="tailwind.preflight.config.js", input_css="base.css",
+                             out="oracle_base.css")
+    r = subprocess.run([str(binary), "css", "-"], input="", capture_output=True, text=True, check=True)
+    if r.stdout == oracle_base:
+        print("preflight: byte-identical with @tailwind base")
+    else:
+        print(f"preflight: MISMATCH (ours {len(r.stdout)}B vs oracle {len(oracle_base)}B)")
+        ok = False
+
+    if ok:
+        print("\nPASS: corpus + scanner + preflight identical with tailwindcss v3.4.17")
         return 0
     return 1
 

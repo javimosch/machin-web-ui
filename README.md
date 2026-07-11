@@ -10,7 +10,7 @@ built-in **Tailwind-compatible CSS engine in pure MFL** — no Node, no bundler.
 > queryable (`--json`), self-describing, and copy-source-into-your-repo, so an
 > agent never needs a docs website — it asks the binary.
 
-## Status: engine spike PASSED
+## Status: engine + scanner + preflight, all oracle-verified
 
 The risky part was the CSS engine: is "100% Tailwind-compatible without Node"
 real? Verified by **differential testing against the real thing** — the
@@ -18,9 +18,26 @@ real? Verified by **differential testing against the real thing** — the
 of user apps):
 
 ```
-corpus: 1465 classes | oracle rules: 1465 | ours: 1465
-PASS: rule-for-rule identical with tailwindcss v3.4.17
+corpus (1465 classes): oracle rules: 1465 | ours: 1465
+scanner (oracle/fixture): oracle rules: 41 | ours: 41
+preflight: byte-identical with @tailwind base
+PASS: corpus + scanner + preflight identical with tailwindcss v3.4.17
 ```
+
+## The CLI
+
+```sh
+machin-web-ui css [paths...] [-o out.css] [--no-preflight]
+    # scan .src/.mfl/.html/.js (dirs recurse) for classes -> stylesheet
+machin-web-ui css -              # explicit class list on stdin (strict:
+                                 # unknown classes reported loudly)
+machin-web-ui coverage           # JSON: exactly which Tailwind surface is
+                                 # implemented — and which is NOT — so an
+                                 # agent can query compat before writing a class
+machin-web-ui check <class...>   # JSON per class: resolves? to which rule?
+```
+
+Scanning the whole isomorphic boilerplate repo end-to-end: **44 ms**.
 
 Every generated rule — selector escaping (`.md\:px-6`, `.\32xl\:flex`),
 declarations, `--tw-*-opacity` variables, `-moz-` autoprefixes, the `:visited`
@@ -51,11 +68,13 @@ output for the whole corpus.
 
 ```sh
 ./build.sh                                  # needs machin v0.107+
-echo "flex items-center gap-2 rounded-lg bg-stone-900 text-white hover:bg-stone-700 md:px-6" | ./twgen
+echo "flex items-center gap-2 rounded-lg bg-stone-900 text-white hover:bg-stone-700 md:px-6" | ./machin-web-ui css --no-preflight -
+./machin-web-ui css path/to/app -o tw.css   # scan a real project
+./machin-web-ui coverage | jq .notImplemented
 ```
 
-Re-run the differential test (downloads nothing; `bin/tailwindcss` is fetched
-once, see `oracle/`):
+Re-run the differential test (needs `bin/tailwindcss`, the standalone oracle
+binary — fetched once from the tailwindcss GitHub releases, not committed):
 
 ```sh
 python3 oracle/check.py
@@ -64,19 +83,23 @@ python3 oracle/check.py
 ## Layout
 
 ```
-src/tw.src          the engine (scanner-ready core: class -> CSS rule)
-src/tw_palette.src  GENERATED from the oracle -- do not hand-edit
-src/twgen.src       spike CLI: classes on stdin -> stylesheet on stdout
-oracle/check.py     corpus generator + differential harness vs tailwindcss
-bin/tailwindcss     dev-only oracle binary (not committed)
+src/tw.src             the engine core: class -> CSS rule
+src/scan.src           content scanner (walk dirs, extract candidates)
+src/cli.src            the CLI: css / coverage / check
+src/tw_palette.src     GENERATED from the oracle -- do not hand-edit
+src/tw_preflight.src   GENERATED from the oracle -- do not hand-edit
+oracle/check.py        differential harness: corpus + scanner + preflight
+oracle/gen_palette.py  regenerate the palette table from ground truth
+oracle/gen_preflight.py  regenerate the preflight embed from ground truth
+bin/tailwindcss        dev-only oracle binary (not committed)
 ```
 
 ## Roadmap
 
-- [x] **M0 spike — tw engine core**, oracle-verified (this)
-- [ ] preflight + `.mfl`/`.src` file scanner (`machin-web-ui css`)
+- [x] **M0 spike — tw engine core**, oracle-verified
+- [x] preflight + `.mfl`/`.src` file scanner (`machin-web-ui css`), oracle-verified
+- [x] `machin-web-ui coverage` + `check` — honest, queryable compat surface
 - [ ] arbitrary values (`w-[13px]`), `group-hover:`, remaining utility families
-- [ ] `machin-web-ui tw coverage --json` — honest, queryable compat surface
 - [ ] `init` — isomorphic app template (from boilerplate-cli-ui-machin-isomorphic)
 - [ ] `add <component>` — vendor MFL component source (button, card, dialog, ...)
       styled to the minimalist design language

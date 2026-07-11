@@ -1,0 +1,64 @@
+// scan.src — content scanner: walk files/dirs, extract class-name candidates.
+// Like Tailwind's extractor, this is deliberately dumb: any run of candidate
+// characters is a token; the engine decides what resolves to a rule.
+
+func scan_charset() (s) {
+    s = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_:./"
+}
+
+func scan_ext_ok(p) (ok) {
+    ok = has_suffix(p, ".src") || has_suffix(p, ".mfl") || has_suffix(p, ".html") || has_suffix(p, ".js")
+}
+
+// extract candidate tokens from text into acc
+func scan_extract(acc, txt) (out) {
+    out = acc
+    cs := scan_charset()
+    tok := ""
+    i := 0
+    n := len(txt)
+    while i <= n {
+        c := ""
+        if i < n { c = charat(txt, i) }
+        if len(c) > 0 && index(cs, c) >= 0 {
+            tok = tok + c
+        } else {
+            if len(tok) > 1 { out = append(out, tok) }
+            tok = ""
+        }
+        i = i + 1
+    }
+}
+
+// walk a path: recurse into directories (skipping hidden entries), scan files
+// with a known extension
+func scan_path(acc, p) (out) {
+    out = acc
+    entries := list_dir(p)
+    if len(entries) > 0 {
+        for _, e := range entries {
+            if has_prefix(e, ".") { continue }
+            out = scan_path(out, p + "/" + e)
+        }
+        return
+    }
+    if scan_ext_ok(p) == false { return }
+    txt := read_file(p)
+    if len(txt) == 0 { return }
+    out = scan_extract(out, txt)
+}
+
+func sort_strings(xs) (out) {
+    out = xs
+    i := 1
+    while i < len(out) {
+        j := i
+        while j > 0 && out[j] < out[j - 1] {
+            t := out[j]
+            out[j] = out[j - 1]
+            out[j - 1] = t
+            j = j - 1
+        }
+        i = i + 1
+    }
+}

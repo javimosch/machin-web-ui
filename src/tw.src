@@ -422,8 +422,11 @@ func tw_rule(cls, pal, sp, st, fr, pm, bs) (css, ok) {
     ok = true
 }
 
-// entry point: class list -> stylesheet (+ a comment listing unknown classes)
-func tw_css(classes) (out) {
+// entry point: class list -> stylesheet (+ a comment listing unknown classes).
+// warn=true (explicit class lists): unknown classes are reported in a header
+// comment. warn=false (file-scan mode): non-resolving tokens are just code, skip
+// them silently — Tailwind's own JIT semantics.
+func tw_css_mode(classes, warn) (out) {
     pal := tw_palette()
     sp := tw_spacing()
     st := tw_static()
@@ -440,5 +443,7 @@ func tw_css(classes) (out) {
         rule, ok := tw_rule(cls, pal, sp, st, fr, pm, bs)
         if ok { out = out + rule + "\n" } else { unknown = unknown + " " + cls }
     }
-    if len(unknown) > 0 { out = "/* tw-unknown:" + unknown + " */\n" + out }
+    if warn && len(unknown) > 0 { out = "/* tw-unknown:" + unknown + " */\n" + out }
 }
+
+func tw_css(classes) (out) { out = tw_css_mode(classes, true) }

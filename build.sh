@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Build the tw engine spike CLI. Needs machin v0.107+.
+# Build the machin-web-ui CLI. Needs machin v0.107+.
 set -euo pipefail
 cd "$(dirname "$0")"
 MACHIN="${MACHIN:-machin}"
-"$MACHIN" encode src/tw_palette.src src/tw.src src/twgen.src > twgen.mfl
-"$MACHIN" build twgen.mfl -o twgen
-echo "built ./twgen"
+"$MACHIN" encode src/tw_palette.src src/tw_preflight.src src/tw.src src/scan.src src/cli.src > machin-web-ui.mfl
+"$MACHIN" build machin-web-ui.mfl -o machin-web-ui
+echo "built ./machin-web-ui"

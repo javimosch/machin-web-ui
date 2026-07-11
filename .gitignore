@@ -1,8 +1,13 @@
 bin/
+machin-web-ui
+machin-web-ui.mfl
 twgen
 twgen.mfl
 oracle/content.html
 oracle/classes.txt
+oracle/base.css
 oracle/out.css
-oracle/oracle.css
+oracle/oracle*.css
 oracle/ours.css
+oracle/preflight_*.css
+oracle/tailwind.fixture.config.js

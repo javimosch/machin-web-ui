@@ -1,0 +1,144 @@
+// cli.src — the machin-web-ui CLI (agent-first: every verb has a machine-readable
+// output; the binary is the documentation).
+//
+//   machin-web-ui css [paths...] [-o out.css] [--no-preflight]
+//       scan .src/.mfl/.html/.js files (dirs recurse) for Tailwind classes and
+//       emit the stylesheet. Default path: "." — pass "-" to read an explicit
+//       whitespace-separated class list from stdin instead (strict mode:
+//       unknown classes are reported in a /* tw-unknown */ header).
+//   machin-web-ui coverage
+//       JSON: exactly which Tailwind surface this engine implements (and what
+//       it does not), so an agent can query compat before writing a class.
+//   machin-web-ui check <class...>
+//       JSON per class: does it resolve, and to which CSS rule.
+
+func json_escape(s) (e) {
+    e = replace(s, "\\", "\\\\")
+    e = replace(e, "\"", "\\\"")
+    e = replace(e, "\n", "\\n")
+}
+
+func usage() {
+    println("machin-web-ui — agent-first design system for isomorphic machin apps")
+    println("")
+    println("usage:")
+    println("  machin-web-ui css [paths...] [-o out.css] [--no-preflight]   scan files -> stylesheet")
+    println("  machin-web-ui css - [--no-preflight]                         class list on stdin -> stylesheet")
+    println("  machin-web-ui coverage                                       implemented Tailwind surface (JSON)")
+    println("  machin-web-ui check <class...>                               resolve classes (JSON)")
+}
+
+func cmd_css(a) {
+    paths := []string{}
+    outfile := ""
+    preflight := true
+    stdin_mode := false
+    i := 2
+    while i < len(a) {
+        arg := a[i]
+        if arg == "-o" {
+            i = i + 1
+            if i < len(a) { outfile = a[i] }
+        }
+        else if arg == "--no-preflight" { preflight = false }
+        else if arg == "-" { stdin_mode = true }
+        else { paths = append(paths, arg) }
+        i = i + 1
+    }
+    classes := []string{}
+    warn := false
+    if stdin_mode {
+        warn = true
+        for _, line := range split(read_stdin(), "\n") {
+            for _, c := range split(trim(line), " ") {
+                t := trim(c)
+                if len(t) > 0 { classes = append(classes, t) }
+            }
+        }
+    } else {
+        if len(paths) == 0 { paths = append(paths, ".") }
+        for _, p := range paths { classes = scan_path(classes, p) }
+        classes = sort_strings(classes)
+    }
+    css := tw_css_mode(classes, warn)
+    if preflight { css = tw_preflight() + css }
+    if len(outfile) > 0 {
+        write_file(outfile, css)
+        println("wrote " + outfile + " (" + str(len(css)) + " bytes)")
+    } else {
+        print(css)
+    }
+}
+
+func cmd_check(a) {
+    pal := tw_palette()
+    sp := tw_spacing()
+    st := tw_static()
+    fr := tw_fractions()
+    pm := tw_pm_heads()
+    bs := tw_border_sides()
+    items := []string{}
+    i := 2
+    while i < len(a) {
+        cls := a[i]
+        rule, ok := tw_rule(cls, pal, sp, st, fr, pm, bs)
+        it := "{\"class\": \"" + json_escape(cls) + "\", \"known\": "
+        if ok { it = it + "true, \"css\": \"" + json_escape(rule) + "\"}" } else { it = it + "false}" }
+        items = append(items, it)
+        i = i + 1
+    }
+    println("[" + join(items, ",\n ") + "]")
+}
+
+func cov_family(name, surface) (s) {
+    s = "    {\"family\": \"" + name + "\", \"surface\": \"" + surface + "\"}"
+}
+
+func cmd_coverage() {
+    fams := []string{}
+    fams = append(fams, cov_family("display", "block inline-block inline flex inline-flex grid inline-grid hidden"))
+    fams = append(fams, cov_family("padding/margin", "{p,m}{,x,y,t,r,b,l}-{spacing}; m*-auto"))
+    fams = append(fams, cov_family("sizing", "{w,h}-{spacing|fraction|auto|full|screen|min|max|fit} (twelfths on both axes)"))
+    fams = append(fams, cov_family("colors", "{bg,text,border}-{palette|black|white|transparent|current|inherit} — full v3 default palette (244)"))
+    fams = append(fams, cov_family("border-width", "border{,-0,-2,-4,-8} and per-side border-{x,y,t,r,b,l}{,-0,-2,-4,-8}"))
+    fams = append(fams, cov_family("border-radius", "rounded{,-none,-sm,-md,-lg,-xl,-2xl,-3xl,-full} (whole element only)"))
+    fams = append(fams, cov_family("typography", "text-{xs..9xl}, text-{left,center,right,justify}, font-{thin..black}, italic/not-italic, tracking-*, leading-{none..loose,3..10}"))
+    fams = append(fams, cov_family("flexbox", "flex-{row,col}{,-reverse}, flex-{wrap,wrap-reverse,nowrap}, flex-{1,auto,initial,none}, grow{,-0}, shrink{,-0}, items-*, justify-*"))
+    fams = append(fams, cov_family("grid", "grid-cols-{1..12,none}, col-span-{1..12,full}, col-auto"))
+    fams = append(fams, cov_family("gap", "gap{,-x,-y}-{spacing}"))
+    fams = append(fams, cov_family("effects", "shadow{,-sm,-md,-lg,-xl,-2xl,-inner,-none}"))
+    missing := []string{}
+    for _, x := range []string{"arbitrary values (w-[13px])", "color opacity modifiers (bg-red-500/50)", "negative values (-mt-2)", "group-*/peer-* variants", "position/inset/z-index", "overflow/object/aspect", "min-w/max-w/min-h/max-h", "ring/outline/divide/space-between-x-y", "opacity/mix-blend/filter", "transition/animation/transform", "cursor/select/pointer-events", "font-family/decoration/truncate/whitespace", "bg-gradient/bg-position/bg-size", "container/columns", "tailwind.config customization (default theme only)"} {
+        missing = append(missing, "    \"" + x + "\"")
+    }
+    out := "{\n"
+    out = out + "  \"engine\": \"machin-web-ui (pure-MFL Tailwind-compatible CSS engine)\",\n"
+    out = out + "  \"compatTarget\": \"tailwindcss v3.4.17, default theme, darkMode: media\",\n"
+    out = out + "  \"verification\": \"differential-tested vs the tailwindcss standalone binary (oracle/check.py): rule-for-rule identical output on the full corpus\",\n"
+    out = out + "  \"palette\": " + str(len(tw_palette())) + ",\n"
+    out = out + "  \"preflight\": \"tailwind base (reset + --tw-* variable defaults), " + str(len(tw_preflight())) + " bytes, generated from the oracle; disable with --no-preflight\",\n"
+    out = out + "  \"variants\": [\"hover\", \"focus\", \"active\", \"disabled\", \"visited\", \"focus-within\", \"focus-visible\", \"dark\", \"sm\", \"md\", \"lg\", \"xl\", \"2xl\"],\n"
+    out = out + "  \"variantStacking\": true,\n"
+    out = out + "  \"families\": [\n" + join(fams, ",\n") + "\n  ],\n"
+    out = out + "  \"notImplemented\": [\n" + join(missing, ",\n") + "\n  ],\n"
+    out = out + "  \"unknownPolicy\": \"explicit class lists (css -, check): unknown classes reported loudly; file scan: non-resolving tokens skipped silently (Tailwind JIT semantics)\"\n"
+    out = out + "}"
+    println(out)
+}
+
+func main() {
+    a := args()
+    if len(a) < 2 { usage()  exit(2) }
+    verb := a[1]
+    if verb == "css" { cmd_css(a) }
+    else if verb == "coverage" { cmd_coverage() }
+    else if verb == "check" {
+        if len(a) < 3 { usage()  exit(2) }
+        cmd_check(a)
+    }
+    else if verb == "help" || verb == "--help" || verb == "-h" { usage() }
+    else {
+        usage()
+        exit(2)
+    }
+}
