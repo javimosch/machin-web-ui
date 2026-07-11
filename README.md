@@ -52,8 +52,14 @@ machin-web-ui check <class...>   # JSON per class: resolves? to which rule?
 ## Components
 
 Flat minimalist design (warm stone monochrome, hairline borders, pale pastel
-accents, no heavy shadows): **button, badge, card, input, select, table,
-tabs, dialog, toast, form_field** (+ `ui` base helpers). Each is a plain MFL
+accents, no heavy shadows) — **30 components**: accordion, alert, avatar,
+badge, breadcrumb, button, card, checkbox, code_block, dialog, dropdown,
+empty_state, form_field, input, kbd, navbar, pagination, progress,
+radio_group, select, separator, skeleton, spinner, stat, switch, table,
+tabs, textarea, toast, tooltip (+ `ui` base helpers). Interactive controls
+are no-JS where possible: checkbox/radio/switch are sr-only native inputs
+driving styled siblings via `peer-checked:`, tooltips use `group-hover:`,
+accordion/dropdown are native `<details>`. Each is a plain MFL
 function usable on both sides — the server calls it for SSR, the wasm client
 calls it inside `hydrate()`. The starter template's `app_view()` in
 `models.src` shows the isomorphic pattern: one view function, dynamic parts
@@ -144,8 +150,11 @@ bin/tailwindcss        dev-only oracle binary (not committed)
       headless Chrome
 - [x] `add <component>` + `list` — 10 components + base helpers, minimalist
       design language, vendored source (you own it)
-- [x] component gallery app **live at [ui.intrane.fr](https://ui.intrane.fr)** —
-      every component SSR'd + hydrated; `gallery/e2e.js` drives it in headless
-      Chrome (works against localhost or the live site via GALLERY_URL)
+- [x] component gallery **live at
+      [javimosch.github.io/machin-web-ui](https://javimosch.github.io/machin-web-ui/)**
+      — every component SSR'd + hydrated; statically exported to GitHub Pages
+      (`gallery/export.sh` -> `docs/`: the `--render` flag prints the SSR page,
+      the wasm client hydrates it — no server in production at all);
+      `gallery/e2e.js` drives it in headless Chrome (GALLERY_URL picks the target)
 - [ ] full canonical rule ordering generated from the oracle (today: structural
       shorthand→axis→side ranking, oracle-checked on conflict pairs)
