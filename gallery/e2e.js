@@ -34,6 +34,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await ev(`document.querySelector('[data-action="dlg_close"]').click()`); await sleep(100);
   r.dlgClosed = await ev(`document.getElementById('dlg').classList.contains('hidden')`);
 
+  r.drwHidden = await ev(`document.getElementById('drw').classList.contains('hidden')`);
+  await ev(`document.querySelector('[data-action="drw_open"]').click()`); await sleep(100);
+  r.drwOpen = await ev(`!document.getElementById('drw').classList.contains('hidden')`);
+  await ev(`document.querySelector('[data-action="drw_close"]').click()`); await sleep(100);
+  r.drwClosed = await ev(`document.getElementById('drw').classList.contains('hidden')`);
+
   await ev(`document.querySelector('[data-action="notify"]').click()`); await sleep(120);
   r.toastVisible = await ev(`!document.getElementById('toast').classList.contains('hidden')`);
   r.toastMsg = await ev(`document.querySelector('[data-s="toast_msg"]').textContent`);
@@ -41,7 +47,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   console.log(JSON.stringify(r, null, 1));
   await c.close(); chrome.kill();
   const pass = r.count0==='0' && r.count3==='3' && r.countReset==='0' && r.panel0!==r.panel1 &&
-    r.tab1Active && r.tab0Idle && r.dlgHidden && r.dlgOpen && r.dlgClosed && r.toastVisible &&
+    r.tab1Active && r.tab0Idle && r.dlgHidden && r.dlgOpen && r.dlgClosed && r.drwHidden && r.drwOpen && r.drwClosed && r.toastVisible &&
     r.toastMsg==='count is 0' && errs.length===0;
   console.log(pass ? 'GALLERY E2E PASS' : 'GALLERY E2E FAIL'); process.exit(pass?0:1);
 })().catch(e=>{console.error(e);chrome.kill();process.exit(1)});

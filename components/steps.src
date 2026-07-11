@@ -1,0 +1,25 @@
+// steps.src — numbered progress steps: done steps are inked, the current one
+// outlined, upcoming ones muted. `current` is 1-based.
+
+func ui_steps(labels, current) (h) {
+    h = "<ol class=\"flex flex-wrap items-center gap-3\">"
+    i := 1
+    for _, l := range labels {
+        dot := "flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium"
+        txt := "text-sm"
+        if i < current {
+            dot = dot + " bg-stone-900 text-white"
+            txt = txt + " text-stone-500"
+        } else if i == current {
+            dot = dot + " border-2 border-stone-900 text-stone-900"
+            txt = txt + " font-medium text-stone-900"
+        } else {
+            dot = dot + " border border-stone-300 text-stone-400"
+            txt = txt + " text-stone-400"
+        }
+        if i > 1 { h = h + "<span class=\"h-px w-6 bg-stone-200\"></span>" }
+        h = h + "<li class=\"flex items-center gap-2\"><span class=\"" + dot + "\">" + str(i) + "</span><span class=\"" + txt + "\">" + ui_esc(l) + "</span></li>"
+        i = i + 1
+    }
+    h = h + "</ol>"
+}

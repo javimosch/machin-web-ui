@@ -45,3 +45,7 @@ export func tab(arg) {
 export func dlg_open(arg) { dom_show("dlg", 1) }
 
 export func dlg_close(arg) { dom_show("dlg", 0) }
+
+export func drw_open(arg) { dom_show("drw", 1) }
+
+export func drw_close(arg) { dom_show("drw", 0) }

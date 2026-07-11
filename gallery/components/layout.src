@@ -1,0 +1,29 @@
+// layout.src — app-shell building blocks: a full-height sidebar + content
+// shell, a wide content container, a responsive card grid, and a two-column
+// split. Compose with sidebar.src for the classic docs/admin layout.
+
+// ui_shell: sticky sidebar (hidden on mobile) + fluid main column
+func ui_shell(sidebar, main) (h) {
+    h = "<div class=\"flex min-h-screen\">"
+    h = h + "<aside class=\"sticky top-0 hidden h-screen w-64 shrink-0 overflow-y-auto border-r border-stone-200 bg-white p-6 md:block\">" + sidebar + "</aside>"
+    h = h + "<main class=\"min-w-0 flex-1 p-6 md:p-10\">" + main + "</main>"
+    h = h + "</div>"
+}
+
+// wide readable content column inside the shell's main area
+func ui_content_classes() (c) {
+    c = "mx-auto flex w-full max-w-6xl flex-col gap-6"
+}
+
+// responsive card grid (pair with xl:col-span-2 on wide children)
+func ui_grid_classes() (c) {
+    c = "grid grid-cols-1 items-start gap-6 xl:grid-cols-2"
+}
+
+// two columns on md+, stacked on mobile
+func ui_split(left, right) (h) {
+    h = "<div class=\"grid grid-cols-1 gap-6 md:grid-cols-2\">"
+    h = h + "<div class=\"min-w-0\">" + left + "</div>"
+    h = h + "<div class=\"min-w-0\">" + right + "</div>"
+    h = h + "</div>"
+}

@@ -1,7 +1,8 @@
 // models.src — the gallery's SHARED isomorphic view: every machin-web-ui
-// component, SSR'd by the server and hydrated by the wasm client. Dynamic
-// fragments (count, tab bar + panel) are passed in so the server renders
-// plain markup and the client renders slot()/list() with the same names.
+// component in a full-wide shell layout (sticky sidebar + responsive card
+// grid). Dynamic fragments (count, tab panel, page number) are passed in so
+// the server renders plain markup and the client renders slot()s with the
+// same data-s names.
 
 func app_name() (s) { s = "machin-web-ui" }
 
@@ -21,29 +22,52 @@ func demo_table() (h) {
     h = ui_table([]string{"app", "domain", "status"}, rows)
 }
 
+// one gallery tile: an anchored wrapper around a card ("wide" spans 2 columns)
+func tile(id, wide, title, body) (h) {
+    c := "min-w-0"
+    if wide { c = c + " xl:col-span-2" }
+    h = "<section id=\"" + id + "\" class=\"" + c + "\">" + ui_card(title, body) + "</section>"
+}
+
+func gallery_sections() (xs) {
+    xs = []string{"Buttons", "Tabs", "Badges", "Form", "Alerts", "Stats", "Feedback", "Navigation", "Primitives", "Structure", "Accordion", "Empty state", "Table", "Overlays"}
+}
+
+func section_anchor(label) (a) {
+    a = "#sec-" + replace(to_lower(label), " ", "-")
+}
+
+func gallery_sidebar() (h) {
+    h = ui_sidebar_brand(app_name(), "gallery")
+    labels := gallery_sections()
+    hrefs := []string{}
+    for _, l := range labels { hrefs = append(hrefs, section_anchor(l)) }
+    h = h + ui_sidebar_group("Components", labels, hrefs, "")
+    h = h + ui_sidebar_group("Project", []string{"GitHub", "machin"}, []string{"https://github.com/javimosch/machin-web-ui", "https://github.com/javimosch/machin"}, "")
+    h = h + "<p class=\"text-xs leading-5 text-stone-400\">One static binary: SSR server, wasm client, Tailwind engine. No Node.</p>"
+}
+
+func gallery_hero() (h) {
+    actions := "<a class=\"" + ui_button_classes("primary") + "\" href=\"https://github.com/javimosch/machin-web-ui\">GitHub</a>"
+    actions = actions + "<a class=\"" + ui_button_classes("ghost") + "\" href=\"https://github.com/javimosch/machin\">machin</a>"
+    actions = actions + ui_kbd("machin-web-ui init my-app")
+    h = ui_hero("Isomorphic machin UI, agent-first.", "Every component below was server-rendered for first paint, then hydrated by a machin WebAssembly client. Styles come from a pure-MFL Tailwind-compatible engine, differential-tested against the real thing.", actions)
+}
+
 func app_view(count_frag, panel_frag, pg_frag) (h) {
-    h = "<header class=\"flex items-center justify-between\">"
-    h = h + "<div class=\"flex items-center gap-3\"><h1 class=\"text-xl font-semibold tracking-tight\">" + app_name() + "</h1>" + ui_badge("gallery", "neutral") + "</div>"
-    h = h + "<a class=\"text-sm text-stone-500 underline-offset-4 hover:text-stone-900 hover:underline\" href=\"https://github.com/javimosch/machin\">machin</a>"
-    h = h + "</header>"
-
-    h = h + "<p class=\"text-sm leading-6 text-stone-500\">Every component below was server-rendered for first paint, then hydrated by a machin WebAssembly client. Styles come from the built-in Tailwind-compatible engine. No Node, no bundler: one static binary.</p>"
-
+    // --- tiles ---
     counter := "<div class=\"flex flex-wrap items-center gap-4\">"
     counter = counter + "<span class=\"min-w-12 text-3xl font-semibold tracking-tight\">" + count_frag + "</span>"
     counter = counter + ui_button("Increment", "primary", "bump")
     counter = counter + ui_button("Notify", "ghost", "notify")
     counter = counter + ui_button("Reset", "danger", "reset")
     counter = counter + "</div>"
-    h = h + ui_card("Buttons + reactive counter", counter)
 
     tabs := ui_tabs("tabs", tab_labels(), "Overview") + "<p class=\"pt-4 text-sm leading-6 text-stone-500\">" + panel_frag + "</p>"
-    h = h + ui_card("Tabs", tabs)
 
     badges := "<div class=\"flex flex-wrap items-center gap-2\">"
     badges = badges + ui_badge("neutral", "neutral") + ui_badge("shipped", "green") + ui_badge("beta", "yellow") + ui_badge("breaking", "red") + ui_badge("info", "blue")
     badges = badges + "</div>"
-    h = h + ui_card("Badges", badges)
 
     form := "<div class=\"flex flex-col gap-4\">"
     form = form + ui_form_field("Project name", ui_input("name", "text", "my-app", ""), "lowercase, dashes allowed")
@@ -55,36 +79,32 @@ func app_view(count_frag, panel_frag, pg_frag) (h) {
     form = form + "</div>"
     form = form + ui_radio_group("plan", []string{"Hobby", "Pro", "Scale"}, "Pro")
     form = form + "</div>"
-    h = h + ui_card("Form", form)
 
     alerts := "<div class=\"flex flex-col gap-3\">"
-    alerts = alerts + ui_alert("success", "Deployed", "gallery is live: one static binary, zero runtime deps.")
+    alerts = alerts + ui_alert("success", "Deployed", "gallery is live: static export on GitHub Pages, zero moving pieces.")
     alerts = alerts + ui_alert("info", "", "the stylesheet on this page was generated by the pure-MFL Tailwind engine.")
     alerts = alerts + ui_alert("warning", "Heads up", "container queries and filters are not implemented yet — `coverage` tells the truth.")
     alerts = alerts + ui_alert("error", "Build failed", "unknown class detected: run `machin-web-ui check <class>` before shipping.")
     alerts = alerts + "</div>"
-    h = h + ui_card("Alerts", alerts)
 
     stats := "<div class=\"grid grid-cols-1 gap-3 md:grid-cols-3\">"
     stats = stats + ui_stat("classes verified", "3,613", "rule-for-rule vs tailwindcss v3.4.17")
     stats = stats + ui_stat("engine speed", "16 ms", "vs 1,342 ms for the oracle")
     stats = stats + ui_stat("binary size", "172 kB", "vs 43 MB")
     stats = stats + "</div>"
-    h = h + ui_card("Stats", stats)
 
     fb := "<div class=\"flex flex-col gap-4\">"
     fb = fb + ui_progress(65)
     fb = fb + "<div class=\"flex items-center gap-3 text-sm text-stone-500\">" + ui_spinner() + "compiling wasm client&hellip;</div>"
     fb = fb + "<div class=\"flex flex-col gap-2\">" + ui_skeleton_bar("w-2/3") + ui_skeleton_bar("w-1/2") + ui_skeleton_bar("w-5/6") + "</div>"
     fb = fb + "</div>"
-    h = h + ui_card("Feedback", fb)
 
     nav := "<div class=\"flex flex-col gap-4\">"
     nav = nav + ui_breadcrumb([]string{"machin", "web-ui", "gallery"}, []string{"https://github.com/javimosch/machin", "", ""})
     nav = nav + "<div class=\"flex flex-wrap items-center gap-3\">" + ui_pagination(2, 5)
     nav = nav + "<span class=\"text-sm text-stone-500\">viewing page " + pg_frag + "</span></div>"
+    nav = nav + ui_steps([]string{"init", "build", "ship"}, 2)
     nav = nav + "</div>"
-    h = h + ui_card("Navigation", nav)
 
     prim := "<div class=\"flex flex-wrap items-center gap-6\">"
     prim = prim + ui_avatar("mw", "neutral") + ui_avatar_stack([]string{"aa", "jb", "cf"})
@@ -94,26 +114,64 @@ func app_view(count_frag, panel_frag, pg_frag) (h) {
     prim = prim + "</div>"
     prim = prim + "<div class=\"mt-4 flex flex-col gap-3\"><p class=\"text-sm text-stone-500\">Install " + ui_code("machin-web-ui") + " and scaffold:</p>"
     prim = prim + ui_code_block("terminal", "machin-web-ui init my-app\ncd my-app && ./build.sh\n./app") + "</div>"
-    h = h + ui_card("Primitives", prim)
+
+    structure := ui_split(
+        "<p class=\"mb-3 text-xs font-medium uppercase tracking-wider text-stone-400\">timeline</p>" + ui_timeline([]string{
+            "day 1", "engine spike: 1,465 classes oracle-identical",
+            "day 2", "scanner, coverage, init, 10 components",
+            "day 3", "31 components, gallery on GitHub Pages"}),
+        "<p class=\"mb-3 text-xs font-medium uppercase tracking-wider text-stone-400\">list group</p>" + ui_list_group([]string{
+            "tw engine", "16ms / 3,613 classes",
+            "wasm client", "hydrates the SSR page",
+            "components", "vendored source you own"}))
 
     faq := ui_accordion([]string{
         "Is this really Tailwind?", "The class names and emitted CSS are — every rule is differential-tested against the tailwindcss binary. The engine is 100% MFL.",
         "Do I need Node?", "No. The engine, scanner, server and wasm client are one toolchain: machin + zig.",
         "Who is this for?", "Agents. The binary answers list/coverage/check in JSON, and components are vendored source the agent can edit."})
-    h = h + ui_card("Accordion", faq)
 
-    h = h + ui_card("Empty state", ui_empty_state("No deployments yet", "Scaffold an app and ship it — the whole loop is one binary and one command.", ui_button("machin-web-ui init", "ghost", "")))
+    overlays := "<div class=\"flex flex-wrap items-center gap-3\">"
+    overlays = overlays + ui_button("Open dialog", "ghost", "dlg_open")
+    overlays = overlays + ui_button("Open drawer", "ghost", "drw_open")
+    overlays = overlays + "</div>"
 
-    h = h + ui_card("Table", demo_table())
+    // --- page ---
+    grid := "<div class=\"" + ui_grid_classes() + "\">"
+    grid = grid + tile("sec-buttons", false, "Buttons + reactive counter", counter)
+    grid = grid + tile("sec-tabs", false, "Tabs", tabs)
+    grid = grid + tile("sec-badges", false, "Badges", badges)
+    grid = grid + tile("sec-feedback", false, "Feedback", fb)
+    grid = grid + tile("sec-form", false, "Form", form)
+    grid = grid + tile("sec-alerts", false, "Alerts", alerts)
+    grid = grid + tile("sec-stats", true, "Stats", stats)
+    grid = grid + tile("sec-navigation", true, "Navigation", nav)
+    grid = grid + tile("sec-primitives", true, "Primitives", prim)
+    grid = grid + tile("sec-structure", true, "Structure", structure)
+    grid = grid + tile("sec-accordion", false, "Accordion", faq)
+    grid = grid + tile("sec-empty-state", false, "Empty state", ui_empty_state("No deployments yet", "Scaffold an app and ship it — the whole loop is one binary and one command.", ui_button("machin-web-ui init", "ghost", "")))
+    grid = grid + tile("sec-table", false, "Table", demo_table())
+    grid = grid + tile("sec-overlays", false, "Overlays", overlays)
+    grid = grid + "</div>"
 
-    h = h + ui_card("Dialog", ui_button("Open dialog", "ghost", "dlg_open"))
+    content := "<div class=\"" + ui_content_classes() + "\">"
+    content = content + gallery_hero()
+    content = content + grid
+    content = content + ui_footer("built with <span class=\"font-medium text-stone-900\">machin-web-ui</span> — SSR + wasm hydration + a Tailwind engine, all pure MFL",
+        []string{"GitHub", "machin"}, []string{"https://github.com/javimosch/machin-web-ui", "https://github.com/javimosch/machin"})
+    content = content + "</div>"
+
+    h = ui_shell(gallery_sidebar(), content)
+
+    // overlays (top-level, outside the shell flow)
     dlg_actions := ui_button("Cancel", "ghost", "dlg_close") + ui_button("Confirm", "primary", "dlg_close")
     h = h + ui_dialog("dlg", "Delete project?", "This action cannot be undone. The project and its data will be permanently removed.", dlg_actions, false)
-
-    h = h + "<footer class=\"flex flex-wrap items-center justify-between gap-2 border-t border-stone-200 pt-4 text-xs text-stone-500\">"
-    h = h + "<span>built with <span class=\"font-medium text-stone-900\">machin-web-ui</span>: SSR + wasm hydration + a Tailwind engine, all pure MFL</span>"
-    h = h + "<kbd class=\"rounded border border-stone-200 bg-stone-100 px-1.5 py-0.5 text-xs\">machin-web-ui init</kbd>"
-    h = h + "</footer>"
-
+    drw := "<p>The registry, straight from <code class=\"rounded bg-stone-100 px-1 py-0.5\">machin-web-ui list</code>:</p>"
+    drw = drw + "<div class=\"mt-3\">" + ui_list_group([]string{
+        "layout + sidebar", "app shells",
+        "drawer + dialog + toast", "overlays",
+        "form controls", "peer-checked, no JS",
+        "tables, stats, timeline", "data display",
+        "hero, navbar, footer", "page chrome"}) + "</div>"
+    h = h + ui_drawer("drw", "right", "Component registry", drw, "drw_close", false)
     h = h + ui_toast("toast", "toast_msg", "green", false)
 }

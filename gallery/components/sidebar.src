@@ -1,0 +1,25 @@
+// sidebar.src — navigation column content for ui_shell: a brand block and
+// titled link groups (the active item is inked and washed).
+
+func ui_sidebar_brand(name, tag) (h) {
+    h = "<div class=\"mb-6 flex items-center gap-2\">"
+    h = h + "<span class=\"text-lg font-semibold tracking-tight\">" + ui_esc(name) + "</span>"
+    if len(tag) > 0 { h = h + ui_badge(tag, "neutral") }
+    h = h + "</div>"
+}
+
+func ui_sidebar_group(title, labels, hrefs, active) (h) {
+    h = "<nav class=\"mb-6 flex flex-col gap-0.5\">"
+    if len(title) > 0 {
+        h = h + "<p class=\"mb-2 text-xs font-medium uppercase tracking-wider text-stone-400\">" + ui_esc(title) + "</p>"
+    }
+    i := 0
+    for _, l := range labels {
+        c := "rounded-md px-2.5 py-1.5 text-sm transition"
+        if l == active { c = c + " bg-stone-100 font-medium text-stone-900" }
+        else { c = c + " text-stone-500 hover:bg-stone-100 hover:text-stone-900" }
+        h = h + "<a class=\"" + c + "\" href=\"" + hrefs[i] + "\">" + ui_esc(l) + "</a>"
+        i = i + 1
+    }
+    h = h + "</nav>"
+}

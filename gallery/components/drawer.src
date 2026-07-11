@@ -1,0 +1,19 @@
+// drawer.src — slide-in side panel: dimmed overlay + full-height sheet from
+// the left or right. Render hidden, toggle the "hidden" class on #<id> from
+// the client (dom_show host effect / any data-action export). `close_action`
+// names the export the X button calls.
+
+func ui_drawer(id, side, title, body, close_action, open) (h) {
+    vis := " hidden"
+    if open { vis = "" }
+    place := "right-0 border-l"
+    if side == "left" { place = "left-0 border-r" }
+    h = "<div id=\"" + id + "\" class=\"fixed inset-0 z-50 bg-stone-900/40" + vis + "\">"
+    h = h + "<div class=\"absolute top-0 " + place + " flex h-full w-80 max-w-full flex-col border-stone-200 bg-white\">"
+    h = h + "<div class=\"flex items-center justify-between border-b border-stone-200 px-5 py-4\">"
+    h = h + "<h3 class=\"text-sm font-semibold tracking-tight\">" + ui_esc(title) + "</h3>"
+    h = h + "<button class=\"rounded-md px-2 py-0.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-900\" data-action=\"" + close_action + "\">&times;</button>"
+    h = h + "</div>"
+    h = h + "<div class=\"flex-1 overflow-y-auto p-5 text-sm leading-6 text-stone-500\">" + body + "</div>"
+    h = h + "</div></div>"
+}

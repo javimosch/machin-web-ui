@@ -52,11 +52,14 @@ machin-web-ui check <class...>   # JSON per class: resolves? to which rule?
 ## Components
 
 Flat minimalist design (warm stone monochrome, hairline borders, pale pastel
-accents, no heavy shadows) — **30 components**: accordion, alert, avatar,
-badge, breadcrumb, button, card, checkbox, code_block, dialog, dropdown,
-empty_state, form_field, input, kbd, navbar, pagination, progress,
-radio_group, select, separator, skeleton, spinner, stat, switch, table,
-tabs, textarea, toast, tooltip (+ `ui` base helpers). Interactive controls
+accents, no heavy shadows) — **38 components**: accordion, alert, avatar,
+badge, breadcrumb, button, card, checkbox, code_block, dialog, drawer,
+dropdown, empty_state, footer, form_field, hero, input, kbd, layout
+(shell/grid/split), list_group, navbar, pagination, progress, radio_group,
+select, separator, sidebar, skeleton, spinner, stat, steps, switch, table,
+tabs, textarea, timeline, toast, tooltip (+ `ui` base helpers). The layout
+family (ui_shell + sidebar + content grid) powers the gallery's own
+full-wide docs layout. Interactive controls
 are no-JS where possible: checkbox/radio/switch are sr-only native inputs
 driving styled siblings via `peer-checked:`, tooltips use `group-hover:`,
 accordion/dropdown are native `<details>`. Each is a plain MFL
