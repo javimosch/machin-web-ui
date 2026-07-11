@@ -49,3 +49,47 @@ export func dlg_close(arg) { dom_show("dlg", 0) }
 export func drw_open(arg) { dom_show("drw", 1) }
 
 export func drw_close(arg) { dom_show("drw", 0) }
+
+// --- calendar: imperative wholesale re-render (the grid is a pure view) ---
+var cal_y = 0
+var cal_m = 0
+var cal_start = 0
+var cal_end = 0
+var cal_ready = false
+
+func cal_state() {
+    if cal_ready { return }
+    cal_ready = true
+    cal_y = cal_init_y()
+    cal_m = cal_init_m()
+    cal_start = cal_init_start()
+    cal_end = cal_init_end()
+}
+
+func cal_render() {
+    dom_mount("cal", ui_calendar(cal_y, cal_m, cal_start, cal_end))
+}
+
+export func cal_prev(arg) {
+    cal_state()
+    cal_m = cal_m - 1
+    if cal_m < 1 { cal_m = 12  cal_y = cal_y - 1 }
+    cal_render()
+}
+
+export func cal_next(arg) {
+    cal_state()
+    cal_m = cal_m + 1
+    if cal_m > 12 { cal_m = 1  cal_y = cal_y + 1 }
+    cal_render()
+}
+
+// two-click range: first click starts a new range, second (>= start) closes it
+export func cal_pick(arg) {
+    cal_state()
+    k := int(arg)
+    if cal_start == 0 || cal_end > 0 { cal_start = k  cal_end = 0 }
+    else if k >= cal_start { cal_end = k }
+    else { cal_start = k }
+    cal_render()
+}

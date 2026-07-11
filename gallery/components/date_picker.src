@@ -1,0 +1,37 @@
+// date_picker.src — native date/time inputs styled to match ui_input: the
+// practical pickers (browser-native popovers, keyboard/a11y for free).
+// Values use the input's wire format: "2026-07-11", "2026-07-11T09:30".
+// For a custom month-grid picker with range selection, see calendar.src.
+
+func ui_date_classes() (c) {
+    c = "rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-300 focus:border-stone-300"
+}
+
+func ui_date_input(typ, name, value) (h) {
+    h = "<input class=\"" + ui_date_classes() + "\" type=\"" + typ + "\" name=\"" + name + "\""
+    if len(value) > 0 { h = h + " value=\"" + value + "\"" }
+    h = h + ">"
+}
+
+func ui_date(name, value) (h) { h = ui_date_input("date", name, value) }
+
+func ui_datetime(name, value) (h) { h = ui_date_input("datetime-local", name, value) }
+
+func ui_time(name, value) (h) { h = ui_date_input("time", name, value) }
+
+// from–to pair joined by an en-dash; typ is "date" or "datetime-local"
+func ui_range_inputs(typ, name_from, name_to, from, to) (h) {
+    h = "<div class=\"inline-flex flex-wrap items-center gap-2\">"
+    h = h + ui_date_input(typ, name_from, from)
+    h = h + "<span class=\"text-stone-400\">&ndash;</span>"
+    h = h + ui_date_input(typ, name_to, to)
+    h = h + "</div>"
+}
+
+func ui_date_range(name_from, name_to, from, to) (h) {
+    h = ui_range_inputs("date", name_from, name_to, from, to)
+}
+
+func ui_datetime_range(name_from, name_to, from, to) (h) {
+    h = ui_range_inputs("datetime-local", name_from, name_to, from, to)
+}

@@ -40,6 +40,15 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await ev(`document.querySelector('[data-action="drw_close"]').click()`); await sleep(100);
   r.drwClosed = await ev(`document.getElementById('drw').classList.contains('hidden')`);
 
+  r.calMonth0 = await ev(`document.querySelector('#cal span.font-semibold').textContent`);
+  await ev(`document.querySelector('[data-action="cal_next"]').click()`); await sleep(100);
+  r.calMonth1 = await ev(`document.querySelector('#cal span.font-semibold').textContent`);
+  await ev(`document.querySelector('#cal [data-action="cal_pick"][data-arg="20260803"]').click()`); await sleep(80);
+  await ev(`document.querySelector('#cal [data-action="cal_pick"][data-arg="20260812"]').click()`); await sleep(80);
+  r.calRange = await ev(`document.querySelector('#cal p').textContent`);
+  r.calInked = await ev(`document.querySelector('#cal [data-arg="20260812"]').className.includes('bg-stone-900')`);
+  r.calWashed = await ev(`document.querySelector('#cal [data-arg="20260807"]').className.includes('bg-stone-100')`);
+
   await ev(`document.querySelector('[data-action="notify"]').click()`); await sleep(120);
   r.toastVisible = await ev(`!document.getElementById('toast').classList.contains('hidden')`);
   r.toastMsg = await ev(`document.querySelector('[data-s="toast_msg"]').textContent`);
@@ -47,7 +56,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   console.log(JSON.stringify(r, null, 1));
   await c.close(); chrome.kill();
   const pass = r.count0==='0' && r.count3==='3' && r.countReset==='0' && r.panel0!==r.panel1 &&
-    r.tab1Active && r.tab0Idle && r.dlgHidden && r.dlgOpen && r.dlgClosed && r.drwHidden && r.drwOpen && r.drwClosed && r.toastVisible &&
+    r.tab1Active && r.tab0Idle && r.dlgHidden && r.dlgOpen && r.dlgClosed && r.drwHidden && r.drwOpen && r.drwClosed &&
+    r.calMonth0 === 'July 2026' && r.calMonth1 === 'August 2026' &&
+    r.calRange.includes('2026-08-03') && r.calRange.includes('2026-08-12') && r.calInked && r.calWashed && r.toastVisible &&
     r.toastMsg==='count is 0' && errs.length===0;
   console.log(pass ? 'GALLERY E2E PASS' : 'GALLERY E2E FAIL'); process.exit(pass?0:1);
 })().catch(e=>{console.error(e);chrome.kill();process.exit(1)});

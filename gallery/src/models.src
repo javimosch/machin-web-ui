@@ -30,7 +30,24 @@ func tile(id, wide, title, body) (h) {
 }
 
 func gallery_sections() (xs) {
-    xs = []string{"Buttons", "Tabs", "Badges", "Form", "Alerts", "Stats", "Feedback", "Navigation", "Primitives", "Structure", "Accordion", "Empty state", "Table", "Overlays"}
+    xs = []string{"Buttons", "Tabs", "Badges", "Form", "Alerts", "Stats", "Feedback", "Navigation", "Dates", "Primitives", "Structure", "Accordion", "Empty state", "Table", "Overlays"}
+}
+
+// the calendar demo's fixed initial state (deterministic SSR == hydration)
+func cal_init_y() (y) { y = 2026 }
+func cal_init_m() (m) { m = 7 }
+func cal_init_start() (k) { k = cal_key(2026, 7, 8) }
+func cal_init_end() (k) { k = cal_key(2026, 7, 14) }
+
+func dates_tile_body() (h) {
+    h = "<div class=\"flex flex-col gap-4\">"
+    h = h + ui_form_field("Date", ui_date("day", "2026-07-11"), "")
+    h = h + ui_form_field("Date & time", ui_datetime("at", "2026-07-11T09:30"), "")
+    h = h + ui_form_field("Date range", ui_date_range("from", "to", "2026-07-08", "2026-07-14"), "")
+    h = h + ui_form_field("Datetime range", ui_datetime_range("start", "end", "2026-07-08T09:00", "2026-07-08T17:30"), "native inputs: browser popovers, keyboard and a11y for free")
+    h = h + ui_separator("custom month grid, range selection, pure-MFL date math")
+    h = h + "<div id=\"cal\">" + ui_calendar(cal_init_y(), cal_init_m(), cal_init_start(), cal_init_end()) + "</div>"
+    h = h + "</div>"
 }
 
 func section_anchor(label) (a) {
@@ -145,6 +162,7 @@ func app_view(count_frag, panel_frag, pg_frag) (h) {
     grid = grid + tile("sec-alerts", false, "Alerts", alerts)
     grid = grid + tile("sec-stats", true, "Stats", stats)
     grid = grid + tile("sec-navigation", true, "Navigation", nav)
+    grid = grid + tile("sec-dates", true, "Dates", dates_tile_body())
     grid = grid + tile("sec-primitives", true, "Primitives", prim)
     grid = grid + tile("sec-structure", true, "Structure", structure)
     grid = grid + tile("sec-accordion", false, "Accordion", faq)
