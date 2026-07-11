@@ -43,6 +43,9 @@ def static_gen():
     c += ["ring", "ring-inset"] + [f"ring-{n}" for n in "0 1 2 4 8".split()]
     c += [f"ring-offset-{n}" for n in "0 1 2 4 8".split()]
     c += [f"border-{s}" for s in "solid dashed dotted double hidden none".split()]
+    # per-side and per-corner radius (whole-element rounded-* is in the hand-written statics)
+    for side in "t r b l tl tr br bl".split():
+        c += [f"rounded-{side}{s}" for s in ["-none", "-sm", "", "-md", "-lg", "-xl", "-2xl", "-3xl", "-full"]]
     c += ["divide-x", "divide-y", "divide-x-reverse", "divide-y-reverse"]
     c += [f"divide-{a}-{n}" for a in "xy" for n in "0 2 4 8".split()]
     c += [f"divide-{s}" for s in "solid dashed dotted double none".split()]

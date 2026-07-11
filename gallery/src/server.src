@@ -11,7 +11,7 @@ func page() (h) {
     h = h + "<style>" + tw_css_text() + "</style></head>"
     h = h + "<body class=\"" + ui_page_classes() + " scroll-smooth\">"
     h = h + "<div id=app>"
-    h = h + app_view("<span data-s=\"count\">0</span>", "<span data-s=\"panel\">" + tab_panel_text(0) + "</span>", "<span data-s=\"pg\">2</span>")
+    h = h + app_view("<span data-s=\"count\">0</span>", "<span data-s=\"panel\">" + tab_panel_text(0) + "</span>", "<span data-s=\"pg\">2</span>", "40%")
     h = h + "</div>"
     h = h + "<script type=module>" + host_js() + "</script>"
     h = h + "</body></html>"

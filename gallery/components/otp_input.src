@@ -1,0 +1,13 @@
+// otp_input.src — segmented one-time-code boxes: n single-character numeric
+// inputs. (Auto-advance between boxes is a host nicety; the visual and form
+// semantics work without it.)
+
+func ui_otp(name, n) (h) {
+    h = "<div class=\"flex items-center gap-2\">"
+    i := 0
+    while i < n {
+        h = h + "<input name=\"" + name + "-" + str(i) + "\" maxlength=\"1\" inputmode=\"numeric\" class=\"h-12 w-10 rounded-md border border-stone-200 bg-white text-center text-lg font-medium text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-300 focus:border-stone-300\">"
+        i = i + 1
+    }
+    h = h + "</div>"
+}

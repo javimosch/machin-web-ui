@@ -1,0 +1,20 @@
+// slider.src — native range input (accent-colored to the ink via inline
+// style; the accent-* utility family is not implemented). `input_action`
+// becomes data-input: the generic host forwards input events to the export
+// with the current value ("" for none).
+
+func ui_slider(name, min, max, val, input_action) (h) {
+    act := ""
+    if len(input_action) > 0 { act = " data-input=\"" + input_action + "\"" }
+    h = "<input type=\"range\" name=\"" + name + "\" min=\"" + str(min) + "\" max=\"" + str(max) + "\" value=\"" + str(val) + "\""
+    h = h + " class=\"h-2 w-full cursor-pointer appearance-none rounded-full bg-stone-200\" style=\"accent-color:#1c1917\"" + act + ">"
+}
+
+// labeled slider row with a live value readout slot (bind/patch "<slot>")
+func ui_slider_row(label, slot_name, initial, name, min, max, val, input_action) (h) {
+    h = "<div class=\"flex flex-col gap-1.5\">"
+    h = h + "<div class=\"flex items-center justify-between text-sm\"><span class=\"font-medium text-stone-900\">" + ui_esc(label) + "</span>"
+    h = h + "<span class=\"text-stone-500\"><span data-s=\"" + slot_name + "\">" + initial + "</span></span></div>"
+    h = h + ui_slider(name, min, max, val, input_action)
+    h = h + "</div>"
+}

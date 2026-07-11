@@ -1,0 +1,70 @@
+// chart.src — dependency-free charts as inline SVG generated in pure MFL:
+// sparkline, bar chart, donut/gauge. Data-driven dimensions are SVG
+// attributes (not utility classes), so nothing depends on runtime-composed
+// class names; colors ride currentColor from a text-* class on the wrapper.
+
+// polyline sparkline; wrap in a span with a text-* class for the stroke color
+func ui_sparkline(values) (h) {
+    n := len(values)
+    if n < 2 { h = ""  return }
+    mn := values[0]
+    mx := values[0]
+    for _, v := range values {
+        if v < mn { mn = v }
+        if v > mx { mx = v }
+    }
+    span := mx - mn
+    if span == 0 { span = 1 }
+    pts := ""
+    i := 0
+    while i < n {
+        x := i * 100 / (n - 1)
+        y := 26 - (values[i] - mn) * 24 / span
+        if i > 0 { pts = pts + " " }
+        pts = pts + str(x) + "," + str(y)
+        i = i + 1
+    }
+    h = "<svg viewBox=\"0 0 100 28\" class=\"h-7 w-full\" preserveAspectRatio=\"none\" fill=\"none\">"
+    h = h + "<polyline points=\"" + pts + "\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>"
+    h = h + "</svg>"
+}
+
+// vertical bars (labels rendered below, outside the SVG)
+func ui_bars(values, labels) (h) {
+    n := len(values)
+    if n == 0 { h = ""  return }
+    mx := 1
+    for _, v := range values {
+        if v > mx { mx = v }
+    }
+    bw := 100 / n
+    h = "<div><svg viewBox=\"0 0 100 40\" class=\"h-24 w-full\" preserveAspectRatio=\"none\">"
+    i := 0
+    while i < n {
+        bh := values[i] * 36 / mx
+        h = h + "<rect x=\"" + str(i * bw + 1) + "\" y=\"" + str(38 - bh) + "\" width=\"" + str(bw - 2) + "\" height=\"" + str(bh) + "\" rx=\"1\" fill=\"currentColor\"/>"
+        i = i + 1
+    }
+    h = h + "</svg>"
+    if len(labels) == n {
+        h = h + "<div class=\"flex\">"
+        for _, l := range labels { h = h + "<span class=\"flex-1 text-center text-xs text-stone-400\">" + ui_esc(l) + "</span>" }
+        h = h + "</div>"
+    }
+    h = h + "</div>"
+}
+
+// donut gauge: pct 0..100 arc over a hairline track, value centered
+func ui_donut(pct, caption) (h) {
+    p := pct
+    if p < 0 { p = 0 }
+    if p > 100 { p = 100 }
+    h = "<div class=\"inline-flex flex-col items-center gap-1\">"
+    h = h + "<svg viewBox=\"0 0 36 36\" class=\"h-20 w-20\">"
+    h = h + "<circle cx=\"18\" cy=\"18\" r=\"16\" fill=\"none\" stroke=\"#e7e5e4\" stroke-width=\"3\"/>"
+    h = h + "<circle cx=\"18\" cy=\"18\" r=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" pathLength=\"100\" stroke-dasharray=\"" + str(p) + " 100\" transform=\"rotate(-90 18 18)\"/>"
+    h = h + "<text x=\"18\" y=\"21\" text-anchor=\"middle\" font-size=\"8\" fill=\"currentColor\">" + str(p) + "%</text>"
+    h = h + "</svg>"
+    if len(caption) > 0 { h = h + "<span class=\"text-xs text-stone-500\">" + ui_esc(caption) + "</span>" }
+    h = h + "</div>"
+}

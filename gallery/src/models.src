@@ -30,7 +30,59 @@ func tile(id, wide, title, body) (h) {
 }
 
 func gallery_sections() (xs) {
-    xs = []string{"Buttons", "Tabs", "Badges", "Form", "Alerts", "Stats", "Feedback", "Navigation", "Dates", "Primitives", "Structure", "Accordion", "Empty state", "Table", "Overlays"}
+    xs = []string{"Buttons", "Tabs", "Badges", "Form", "Alerts", "Stats", "Charts", "Agent UI", "Feedback", "Navigation", "Dates", "Input extras", "Primitives", "Structure", "Accordion", "Empty state", "Table", "Overlays"}
+}
+
+func chips_init() (xs) { xs = []string{"machin", "wasm", "tailwind", "agent-first"} }
+
+func charts_tile_body() (h) {
+    spark := "<div class=\"text-sky-600\">" + ui_sparkline([]int{3, 5, 2, 8, 6, 9, 4, 7, 10, 8, 12, 9}) + "</div>"
+    spark = "<div><p class=\"mb-1 text-xs font-medium uppercase tracking-wider text-stone-400\">sparkline &middot; commits</p>" + spark + "</div>"
+    bars := "<div class=\"text-stone-900\">" + ui_bars([]int{12, 9, 14, 7, 16, 11, 18}, []string{"mo", "tu", "we", "th", "fr", "sa", "su"}) + "</div>"
+    bars = "<div><p class=\"mb-1 text-xs font-medium uppercase tracking-wider text-stone-400\">bars &middot; builds per day</p>" + bars + "</div>"
+    donuts := "<div class=\"flex items-center gap-6\"><span class=\"text-green-600\">" + ui_donut(91, "tests") + "</span><span class=\"text-stone-900\">" + ui_donut(76, "coverage") + "</span></div>"
+    heat := []int{}
+    i := 0
+    while i < 84 { heat = append(heat, (i * 5 + i / 3) % 7 % 5)  i = i + 1 }
+    hm := "<div><p class=\"mb-2 text-xs font-medium uppercase tracking-wider text-stone-400\">heatmap &middot; 12 weeks</p>" + ui_heatmap(heat) + "</div>"
+    h = ui_split(spark + "<div class=\"mt-6\">" + bars + "</div>", "<div class=\"flex flex-col gap-6\">" + donuts + hm + "</div>")
+    h = h + "<p class=\"mt-4 text-xs text-stone-500\">All charts are inline SVG generated in pure MFL — data-driven geometry lives in attributes, colors ride currentColor.</p>"
+}
+
+func agent_tile_body() (h) {
+    chat := ui_chat([]string{
+        "user", "Ship the gallery to GitHub Pages.",
+        "assistant", "Exporting the SSR page and wasm client, then pushing docs/.",
+        "tool", "$ ./export.sh\nexported ../docs (66kB html + 1.4MB wasm)",
+        "assistant", "Live. The E2E suite passes against production."})
+    logs := ui_log_view("demo-log", []string{
+        ui_log_line("09:31:02", "info", "scan: 41 source files, 312 classes"),
+        ui_log_line("09:31:02", "ok", "stylesheet: 3,613 rules, oracle-identical"),
+        ui_log_line("09:31:03", "warn", "unknown class dropped: bg-blurple-500"),
+        ui_log_line("09:31:04", "error", "wasm export missing: data-action=\"nope\""),
+        ui_log_line("09:31:05", "ok", "deploy: pages updated in 41s")})
+    diff := ui_diff_view([]string{
+        " ", "func handle(req) (res) {",
+        "-", "    return ok_html(page)",
+        "+", "    return ok_html(page())",
+        " ", "}"})
+    h = ui_split("<p class=\"mb-3 text-xs font-medium uppercase tracking-wider text-stone-400\">chat transcript</p>" + chat,
+        "<div class=\"flex flex-col gap-4\"><p class=\"-mb-2 text-xs font-medium uppercase tracking-wider text-stone-400\">log stream</p>" + logs +
+        "<p class=\"-mb-2 text-xs font-medium uppercase tracking-wider text-stone-400\">diff</p>" + diff + "</div>")
+}
+
+func extras_tile_body(slider_val_frag) (h) {
+    left := "<div class=\"flex flex-col gap-5\">"
+    left = left + ui_slider_row("Verbosity", "slider_val", slider_val_frag, "verb", 0, 100, 40, "slider_set")
+    left = left + "<div class=\"flex flex-wrap items-center gap-6\"><span id=\"rating\">" + ui_rating(3, 5, "rate") + "</span>"
+    left = left + "<span id=\"chips\">" + ui_chips(chips_init(), "chip_del") + "</span></div>"
+    left = left + ui_form_field("One-time code", ui_otp("otp", 6), "")
+    left = left + "</div>"
+    right := "<div class=\"flex flex-col gap-5\">"
+    right = right + ui_file_upload("artifact", "Drop a build artifact", "or click to browse — wire to a machweb multipart route")
+    right = right + ui_form_field("API key", ui_copy_field("mwu_live_9f3a1c77e2", true), "click Copy — the host owns the clipboard")
+    right = right + "</div>"
+    h = ui_split(left, right)
 }
 
 // the calendar demo's fixed initial state (deterministic SSR == hydration)
@@ -71,7 +123,7 @@ func gallery_hero() (h) {
     h = ui_hero("Isomorphic machin UI, agent-first.", "Every component below was server-rendered for first paint, then hydrated by a machin WebAssembly client. Styles come from a pure-MFL Tailwind-compatible engine, differential-tested against the real thing.", actions)
 }
 
-func app_view(count_frag, panel_frag, pg_frag) (h) {
+func app_view(count_frag, panel_frag, pg_frag, slider_val_frag) (h) {
     // --- tiles ---
     counter := "<div class=\"flex flex-wrap items-center gap-4\">"
     counter = counter + "<span class=\"min-w-12 text-3xl font-semibold tracking-tight\">" + count_frag + "</span>"
@@ -128,9 +180,20 @@ func app_view(count_frag, panel_frag, pg_frag) (h) {
     prim = prim + ui_tooltip(ui_badge("hover me", "blue"), "a no-JS tooltip via group-hover")
     prim = prim + ui_kbd_combo([]string{"ctrl", "K"})
     prim = prim + ui_dropdown("Actions", []string{"Notify", "notify", "Increment", "bump"})
+    prim = prim + ui_popover("What is this?", "A click-toggled popover — native <code>&lt;details&gt;</code>, absolutely positioned panel, zero JS. Close by clicking the trigger again.")
     prim = prim + "</div>"
     prim = prim + "<div class=\"mt-4 flex flex-col gap-3\"><p class=\"text-sm text-stone-500\">Install " + ui_code("machin-web-ui") + " and scaffold:</p>"
     prim = prim + ui_code_block("terminal", "machin-web-ui init my-app\ncd my-app && ./build.sh\n./app") + "</div>"
+
+    tree_demo := ui_tree(ui_tree_node("my-app",
+        ui_tree_node("src", ui_tree_leaf("models.src") + ui_tree_leaf("server.src") + ui_tree_leaf("client.src")) +
+        ui_tree_node("components", ui_tree_leaf("button.src") + ui_tree_leaf("calendar.src")) +
+        ui_tree_leaf("build.sh")))
+    details := ui_desc_list([]string{
+        "status", ui_badge("live", "green"),
+        "engine", "tailwindcss v3.4.17-compatible, pure MFL",
+        "hosting", "GitHub Pages, static export",
+        "verified by", "headless-Chrome E2E + a 3,613-class oracle diff"})
 
     structure := ui_split(
         "<p class=\"mb-3 text-xs font-medium uppercase tracking-wider text-stone-400\">timeline</p>" + ui_timeline([]string{
@@ -141,6 +204,9 @@ func app_view(count_frag, panel_frag, pg_frag) (h) {
             "tw engine", "16ms / 3,613 classes",
             "wasm client", "hydrates the SSR page",
             "components", "vendored source you own"}))
+    structure = structure + "<div class=\"mt-6\">" + ui_split(
+        "<p class=\"mb-3 text-xs font-medium uppercase tracking-wider text-stone-400\">tree</p>" + tree_demo,
+        "<p class=\"mb-3 text-xs font-medium uppercase tracking-wider text-stone-400\">description list</p>" + details) + "</div>"
 
     faq := ui_accordion([]string{
         "Is this really Tailwind?", "The class names and emitted CSS are — every rule is differential-tested against the tailwindcss binary. The engine is 100% MFL.",
@@ -150,6 +216,8 @@ func app_view(count_frag, panel_frag, pg_frag) (h) {
     overlays := "<div class=\"flex flex-wrap items-center gap-3\">"
     overlays = overlays + ui_button("Open dialog", "ghost", "dlg_open")
     overlays = overlays + ui_button("Open drawer", "ghost", "drw_open")
+    overlays = overlays + ui_button("Command palette", "ghost", "palette")
+    overlays = overlays + "<span class=\"text-xs text-stone-500\">or press " + ui_kbd_combo([]string{"ctrl", "K"}) + "</span>"
     overlays = overlays + "</div>"
 
     // --- page ---
@@ -161,8 +229,11 @@ func app_view(count_frag, panel_frag, pg_frag) (h) {
     grid = grid + tile("sec-form", false, "Form", form)
     grid = grid + tile("sec-alerts", false, "Alerts", alerts)
     grid = grid + tile("sec-stats", true, "Stats", stats)
+    grid = grid + tile("sec-charts", true, "Charts", charts_tile_body())
+    grid = grid + tile("sec-agent-ui", true, "Agent UI", agent_tile_body())
     grid = grid + tile("sec-navigation", true, "Navigation", nav)
     grid = grid + tile("sec-dates", true, "Dates", dates_tile_body())
+    grid = grid + tile("sec-input-extras", true, "Input extras", extras_tile_body(slider_val_frag))
     grid = grid + tile("sec-primitives", true, "Primitives", prim)
     grid = grid + tile("sec-structure", true, "Structure", structure)
     grid = grid + tile("sec-accordion", false, "Accordion", faq)
@@ -172,7 +243,9 @@ func app_view(count_frag, panel_frag, pg_frag) (h) {
     grid = grid + "</div>"
 
     content := "<div class=\"" + ui_content_classes() + "\">"
+    content = content + ui_banner("top-banner", "58 components and counting &mdash; <span class=\"text-stone-300\">press ctrl+K for the command palette</span>", "banner_close")
     content = content + gallery_hero()
+    content = content + ui_section_header("Components", "Every tile is live: SSR'd, hydrated, engine-styled.", ui_button("Browse registry", "ghost", "drw_open"))
     content = content + grid
     content = content + ui_footer("built with <span class=\"font-medium text-stone-900\">machin-web-ui</span> — SSR + wasm hydration + a Tailwind engine, all pure MFL",
         []string{"GitHub", "machin"}, []string{"https://github.com/javimosch/machin-web-ui", "https://github.com/javimosch/machin"})
@@ -191,5 +264,11 @@ func app_view(count_frag, panel_frag, pg_frag) (h) {
         "tables, stats, timeline", "data display",
         "hero, navbar, footer", "page chrome"}) + "</div>"
     h = h + ui_drawer("drw", "right", "Component registry", drw, "drw_close", false)
+    h = h + ui_command_palette("pal", []string{
+        "Increment counter", "bump", "",
+        "Show toast", "notify", "toast",
+        "Open drawer", "drw_open", "registry",
+        "Open dialog", "dlg_open", "",
+        "Reset counter", "reset", ""})
     h = h + ui_toast("toast", "toast_msg", "green", false)
 }

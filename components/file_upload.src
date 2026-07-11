@@ -1,0 +1,11 @@
+// file_upload.src — dropzone-styled file input: the whole dashed area is a
+// label wrapping an sr-only native input, so clicking anywhere opens the
+// picker. Pure HTML/CSS; wire actual uploads to your machweb multipart route.
+
+func ui_file_upload(name, title, hint) (h) {
+    h = "<label class=\"flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed border-stone-300 bg-white px-6 py-8 text-center transition hover:border-stone-400 hover:bg-stone-100\">"
+    h = h + "<input type=\"file\" name=\"" + name + "\" class=\"sr-only\">"
+    h = h + "<span class=\"text-sm font-medium text-stone-900\">" + ui_esc(title) + "</span>"
+    h = h + "<span class=\"text-xs text-stone-500\">" + ui_esc(hint) + "</span>"
+    h = h + "</label>"
+}

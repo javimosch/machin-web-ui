@@ -26,8 +26,28 @@ mem = instance.exports.memory;
 instance.exports._initialize?.();
 instance.exports.start();
 
-// delegate clicks: <button data-action="bump" data-arg="0"> calls exports.bump(0n)
+// delegate clicks: <button data-action="bump" data-arg="0"> calls exports.bump(0n);
+// [data-copy] copies its payload to the clipboard.
 document.body.addEventListener('click', (e) => {
+  const c = e.target.closest('[data-copy]');
+  if (c) { navigator.clipboard?.writeText(c.dataset.copy); c.textContent = 'Copied'; setTimeout(() => c.textContent = 'Copy', 1200); return; }
   const b = e.target.closest('[data-action]');
   if (b) instance.exports[b.dataset.action]?.(BigInt(b.dataset.arg ?? 0));
+});
+
+// delegate input events: <input data-input="slider_set"> calls exports.slider_set(value)
+document.body.addEventListener('input', (e) => {
+  const t = e.target;
+  if (t.dataset.input) instance.exports[t.dataset.input]?.(BigInt(t.value || 0));
+  if (t.dataset.paletteInput !== undefined) {
+    const q = t.value.toLowerCase();
+    t.closest('div').parentElement.querySelectorAll('[data-item]').forEach(el =>
+      el.classList.toggle('hidden', !el.textContent.toLowerCase().includes(q)));
+  }
+});
+
+// ctrl/cmd-K toggles the command palette; Escape closes it
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); instance.exports.palette?.(0n); }
+  if (e.key === 'Escape') instance.exports.palette_close?.(0n);
 });

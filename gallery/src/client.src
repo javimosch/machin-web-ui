@@ -19,7 +19,8 @@ export func start() {
     hydrate(app_view(
         slot("count", func() { return str(get(count)) }),
         slot("panel", func() { return tab_panel_text(get(tab_sig)) }),
-        slot("pg", func() { return str(get(pg)) })))
+        slot("pg", func() { return str(get(pg)) }),
+        "40%"))
     bind("toast_msg", func() { get(count)  return "count is " + str(get(count)) })
 }
 
@@ -83,6 +84,49 @@ export func cal_next(arg) {
     if cal_m > 12 { cal_m = 1  cal_y = cal_y + 1 }
     cal_render()
 }
+
+// --- input extras + overlays ---
+var star_val = 3
+var chip_list = []string{}
+var chips_ready = false
+var pal_open = false
+
+// data-input="slider_set": live value readout via a direct text patch
+export func slider_set(arg) {
+    dom_patch("slider_val", str(int(arg)) + "%")
+}
+
+export func rate(arg) {
+    star_val = int(arg)
+    dom_mount("rating", ui_rating(star_val, 5, "rate"))
+}
+
+export func chip_del(arg) {
+    if chips_ready == false { chips_ready = true  chip_list = chips_init() }
+    i := int(arg)
+    next := []string{}
+    j := 0
+    for _, c := range chip_list {
+        if j != i { next = append(next, c) }
+        j = j + 1
+    }
+    chip_list = next
+    dom_mount("chips", ui_chips(chip_list, "chip_del"))
+}
+
+export func palette(arg) {
+    pal_open = pal_open == false
+    n := 0
+    if pal_open { n = 1 }
+    dom_show("pal", n)
+}
+
+export func palette_close(arg) {
+    pal_open = false
+    dom_show("pal", 0)
+}
+
+export func banner_close(arg) { dom_show("top-banner", 0) }
 
 // two-click range: first click starts a new range, second (>= start) closes it
 export func cal_pick(arg) {

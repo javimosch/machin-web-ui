@@ -1,0 +1,23 @@
+// log_view.src — terminal-style log panel: dark surface, mono lines, level
+// tinting. Build lines with ui_log_line, wrap with ui_log_view (scrolls when
+// tall; give it an id so a client can dom_mount new lines in).
+
+func ui_log_level_class(level) (c) {
+    c = "text-stone-400"
+    if level == "info" { c = "text-sky-400" }
+    if level == "ok" { c = "text-green-400" }
+    if level == "warn" { c = "text-amber-400" }
+    if level == "error" { c = "text-red-400" }
+}
+
+func ui_log_line(time, level, msg) (h) {
+    h = "<div class=\"flex gap-3\"><span class=\"shrink-0 text-stone-500\">" + ui_esc(time) + "</span>"
+    h = h + "<span class=\"w-12 shrink-0 uppercase " + ui_log_level_class(level) + "\">" + ui_esc(level) + "</span>"
+    h = h + "<span class=\"min-w-0 text-stone-200\">" + ui_esc(msg) + "</span></div>"
+}
+
+func ui_log_view(id, lines) (h) {
+    h = "<div id=\"" + id + "\" class=\"flex max-h-64 flex-col gap-1 overflow-y-auto rounded-lg bg-stone-900 p-4 text-xs\">"
+    for _, l := range lines { h = h + l }
+    h = h + "</div>"
+}

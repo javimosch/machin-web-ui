@@ -1,0 +1,17 @@
+// tree.src — collapsible tree (file explorers, nested data), no JS: nested
+// native <details>. Compose nodes by nesting: ui_tree(ui_tree_node("src",
+// ui_tree_leaf("main.src") + ui_tree_node("lib", ...)) + ...).
+
+func ui_tree_node(label, children) (h) {
+    h = "<details class=\"group\" open><summary class=\"cursor-pointer rounded px-1.5 py-0.5 text-sm font-medium text-stone-900 hover:bg-stone-100\">" + ui_esc(label) + "</summary>"
+    h = h + "<div class=\"ml-2 flex flex-col border-l border-stone-200 pl-3\">" + children + "</div>"
+    h = h + "</details>"
+}
+
+func ui_tree_leaf(label) (h) {
+    h = "<span class=\"rounded px-1.5 py-0.5 text-sm text-stone-500 hover:bg-stone-100 hover:text-stone-900\">" + ui_esc(label) + "</span>"
+}
+
+func ui_tree(body) (h) {
+    h = "<div class=\"flex flex-col\">" + body + "</div>"
+}

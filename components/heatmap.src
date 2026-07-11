@@ -1,0 +1,28 @@
+// heatmap.src — contribution-style activity grid: columns of 7 cells (weeks),
+// intensity 0..4 mapped to a fixed tint scale (classes are static, so the
+// scanner always sees them).
+
+func ui_heat_tint(level) (c) {
+    c = "bg-stone-100"
+    if level == 1 { c = "bg-green-100" }
+    if level == 2 { c = "bg-green-300" }
+    if level == 3 { c = "bg-green-500" }
+    if level >= 4 { c = "bg-green-700" }
+}
+
+// values: one intensity per day, laid out top-to-bottom then next column
+func ui_heatmap(values) (h) {
+    h = "<div class=\"flex gap-1\">"
+    col := ""
+    i := 0
+    for _, v := range values {
+        col = col + "<span class=\"h-3 w-3 rounded-sm " + ui_heat_tint(v) + "\"></span>"
+        i = i + 1
+        if i % 7 == 0 {
+            h = h + "<span class=\"flex flex-col gap-1\">" + col + "</span>"
+            col = ""
+        }
+    }
+    if len(col) > 0 { h = h + "<span class=\"flex flex-col gap-1\">" + col + "</span>" }
+    h = h + "</div>"
+}

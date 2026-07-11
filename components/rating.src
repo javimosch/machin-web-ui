@@ -1,0 +1,23 @@
+// rating.src — star rating: SVG stars (no emoji), filled amber up to `value`.
+// Interactive when `action` is set: each star is a data-action button with
+// data-arg = its index (re-render the container via dom_mount on change).
+
+func ui_star_svg() (s) {
+    s = "<svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"currentColor\"><path d=\"M8 1l2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 11.8 3.8 14l.8-4.7L1.2 6l4.7-.7z\"/></svg>"
+}
+
+func ui_rating(value, max, action) (h) {
+    h = "<span class=\"inline-flex items-center gap-0.5\">"
+    i := 1
+    while i <= max {
+        c := "text-stone-300"
+        if i <= value { c = "text-amber-500" }
+        if len(action) > 0 {
+            h = h + "<button class=\"" + c + " transition hover:text-amber-500\" data-action=\"" + action + "\" data-arg=\"" + str(i) + "\">" + ui_star_svg() + "</button>"
+        } else {
+            h = h + "<span class=\"" + c + "\">" + ui_star_svg() + "</span>"
+        }
+        i = i + 1
+    }
+    h = h + "</span>"
+}
