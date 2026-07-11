@@ -1,0 +1,31 @@
+// models.src — SHARED between the server and the wasm client (composed into
+// both builds). The isomorphic view lives here ONCE: the server calls it with
+// plain SSR fragments, the client calls it with reactive slot() fragments
+// bound to the same data-s names — so hydration reuses the server's DOM.
+
+func app_name() (s) { s = "machin-web-ui starter" }
+
+// app_view: the whole page body. `count_frag` is the dynamic counter markup —
+// the server passes "<span data-s=\"count\">0</span>", the client passes
+// slot("count", ...) which renders the identical span and queues its binding.
+func app_view(count_frag) (h) {
+    counter := "<div class=\"flex items-center gap-4\">"
+    counter = counter + "<span class=\"min-w-12 text-3xl font-semibold tracking-tight\">" + count_frag + "</span>"
+    counter = counter + ui_button("Increment", "primary", "bump")
+    counter = counter + ui_button("Notify", "ghost", "notify")
+    counter = counter + "</div>"
+
+    form := "<div class=\"flex flex-col gap-4\">"
+    form = form + ui_form_field("Project name", ui_input("name", "text", "my-app", ""), "lowercase, dashes allowed")
+    form = form + ui_form_field("Datastore", ui_select("db", []string{"SQLite", "PostgreSQL", "Redis"}, "SQLite"), "")
+    form = form + "</div>"
+
+    h = "<header class=\"flex items-center justify-between\">"
+    h = h + "<h1 class=\"text-xl font-semibold tracking-tight\">" + app_name() + "</h1>"
+    h = h + ui_badge("isomorphic", "green")
+    h = h + "</header>"
+    h = h + ui_card("Counter", counter)
+    h = h + ui_card("Form", form)
+    h = h + "<p class=\"text-xs text-stone-500\">SSR first paint - hydrated by a machin wasm client - styled by the built-in Tailwind engine. No Node, no bundler.</p>"
+    h = h + ui_toast("toast", "toast_msg", "green", false)
+}

@@ -169,7 +169,33 @@ def main():
                        capture_output=True, text=True, check=True)
     ok &= diff("scanner (oracle/fixture)", oracle_scan, normalize2(r.stdout))
 
-    # 3. preflight: our embedded @tailwind base == the oracle's, byte-identical
+    # 3. cascade order: for same-property conflicts, the relative rule order
+    #    must match the oracle (set-comparison can't see this)
+    pairs = [("border-stone-200", "border-l-green-600"), ("border-x-red-500", "border-t-red-500"),
+             ("m-4", "mt-2"), ("px-4", "pl-2"), ("my-2", "mb-8"),
+             ("inset-0", "top-4"), ("inset-0", "inset-y-2"), ("gap-2", "gap-x-4"),
+             ("overflow-hidden", "overflow-y-scroll")]
+    order_ok = True
+    for a, b in pairs:
+        (HERE / "orderfix.src").write_text(f'func v() (h) {{ h = "{a} {b}" }}\n')
+        (HERE / "tailwind.order.config.js").write_text(
+            'module.exports = { content: ["./orderfix.src"], corePlugins: { preflight: false } }\n')
+        ocss = run_oracle(None, config="tailwind.order.config.js", out="oracle_order.css")
+        r = subprocess.run([str(binary), "css", "--no-preflight", str(HERE / "orderfix.src")],
+                           capture_output=True, text=True, check=True)
+        def pos(css, cls):
+            i = css.find("." + cls.replace(":", "\\:") + " ")
+            return i if i >= 0 else css.find("." + cls)
+        o_first = pos(ocss, a) < pos(ocss, b)
+        u_first = pos(r.stdout, a) < pos(r.stdout, b)
+        if o_first != u_first:
+            print(f"ORDER MISMATCH for ({a}, {b}): oracle {'a<b' if o_first else 'b<a'}, ours {'a<b' if u_first else 'b<a'}")
+            order_ok = False
+    if order_ok:
+        print(f"cascade order: {len(pairs)} conflict pairs match the oracle")
+    ok &= order_ok
+
+    # 4. preflight: our embedded @tailwind base == the oracle's, byte-identical
     oracle_base = run_oracle(None, config="tailwind.preflight.config.js", input_css="base.css",
                              out="oracle_base.css")
     r = subprocess.run([str(binary), "css", "-"], input="", capture_output=True, text=True, check=True)

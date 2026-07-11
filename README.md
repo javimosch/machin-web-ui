@@ -18,15 +18,27 @@ real? Verified by **differential testing against the real thing** — the
 of user apps):
 
 ```
-corpus (3471 classes): oracle rules: 3476 | ours: 3476
+corpus (3613 classes): oracle rules: 3618 | ours: 3618
 scanner (oracle/fixture): oracle rules: 66 | ours: 66
+cascade order: 9 conflict pairs match the oracle
 preflight: byte-identical with @tailwind base
 PASS: corpus + scanner + preflight identical with tailwindcss v3.4.17
 ```
 
+And the whole loop is proven end-to-end: `init` an app, build it (native
+server + wasm client), drive it in a real headless Chrome — SSR first paint,
+wasm hydration, reactive click patches, toast, computed styles from the
+generated stylesheet — all asserted.
+
 ## The CLI
 
 ```sh
+machin-web-ui init [dir]         # scaffold an isomorphic app: SSR + reactive
+                                 # wasm client + starter components, builds
+                                 # out of the box
+machin-web-ui add dialog table   # vendor component source into ./components/
+                                 # (shadcn-style: you own it, edit it)
+machin-web-ui list               # component registry (JSON)
 machin-web-ui css [paths...] [-o out.css] [--no-preflight]
     # scan .src/.mfl/.html/.js (dirs recurse) for classes -> stylesheet
 machin-web-ui css -              # explicit class list on stdin (strict:
@@ -37,7 +49,16 @@ machin-web-ui coverage           # JSON: exactly which Tailwind surface is
 machin-web-ui check <class...>   # JSON per class: resolves? to which rule?
 ```
 
-Scanning the whole isomorphic boilerplate repo end-to-end: **44 ms**.
+## Components
+
+Flat minimalist design (warm stone monochrome, hairline borders, pale pastel
+accents, no heavy shadows): **button, badge, card, input, select, table,
+tabs, dialog, toast, form_field** (+ `ui` base helpers). Each is a plain MFL
+function usable on both sides — the server calls it for SSR, the wasm client
+calls it inside `hydrate()`. The starter template's `app_view()` in
+`models.src` shows the isomorphic pattern: one view function, dynamic parts
+passed as fragments (SSR spans on the server, reactive `slot()`s on the
+client, same `data-s` names).
 
 Every generated rule — selector escaping (`.md\:px-6`, `.\32xl\:flex`),
 declarations, `--tw-*-opacity` variables, `-moz-` autoprefixes, the `:visited`
@@ -98,14 +119,17 @@ python3 oracle/check.py
 ## Layout
 
 ```
-src/tw.src             the engine core: class -> CSS rule
+src/tw.src             the engine core: class -> CSS rule (+ cascade ranking)
 src/scan.src           content scanner (walk dirs, extract candidates)
-src/cli.src            the CLI: css / coverage / check
+src/cli.src            the CLI: init / add / list / css / coverage / check
 src/tw_palette.src     GENERATED from the oracle -- do not hand-edit
 src/tw_preflight.src   GENERATED from the oracle -- do not hand-edit
-oracle/check.py        differential harness: corpus + scanner + preflight
-oracle/gen_palette.py  regenerate the palette table from ground truth
-oracle/gen_preflight.py  regenerate the preflight embed from ground truth
+src/tw_static_gen.src  GENERATED from the oracle -- do not hand-edit
+src/embed_gen.src      GENERATED from template/ + components/ (tools/gen_embed.py)
+template/              the `init` scaffold (isomorphic starter app)
+components/            the component registry (vendored by `add`)
+oracle/check.py        differential harness: corpus + scanner + order + preflight
+oracle/gen_*.py        regenerate the generated tables from ground truth
 bin/tailwindcss        dev-only oracle binary (not committed)
 ```
 
@@ -116,7 +140,10 @@ bin/tailwindcss        dev-only oracle binary (not committed)
 - [x] `machin-web-ui coverage` + `check` — honest, queryable compat surface
 - [x] arbitrary values, `group-*`/`peer-*`, opacity modifiers, negatives, and
       ~all remaining v3 core families (see `coverage` for the exact list)
-- [ ] `init` — isomorphic app template (from boilerplate-cli-ui-machin-isomorphic)
-- [ ] `add <component>` — vendor MFL component source (button, card, dialog, ...)
-      styled to the minimalist design language
+- [x] `init` — isomorphic app template (SSR + wasm hydration), E2E-proven in
+      headless Chrome
+- [x] `add <component>` + `list` — 10 components + base helpers, minimalist
+      design language, vendored source (you own it)
 - [ ] component gallery app, deployed (screenshot-verify target)
+- [ ] full canonical rule ordering generated from the oracle (today: structural
+      shorthand→axis→side ranking, oracle-checked on conflict pairs)

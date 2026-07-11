@@ -102,8 +102,9 @@ def param_corpus():
     # negative margins
     for h in "m mx my mt mr mb ml".split():
         c += [f"-{h}-{s}" for s in SPACING]
-    # max-h over spacing
-    c += [f"max-h-{s}" for s in SPACING]
+    # min/max sizing over spacing (v3.4 addition)
+    for h in ("max-h", "min-w", "max-w", "min-h"):
+        c += [f"{h}-{s}" for s in SPACING]
     # translate (parametric: spacing + fractions + full + negatives)
     for a in "xy":
         c += [f"translate-{a}-{s}" for s in SPACING] + [f"translate-{a}-full"]
@@ -124,6 +125,10 @@ def param_corpus():
         c += [f"bg-red-500/{n}", f"text-stone-900/{n}", f"border-blue-500/{n}"]
     c += ["bg-white/50", "bg-black/5", "text-white/75"]
     c += ["ring-stone-950/10", "ring-red-500/50", "divide-stone-200/50", "divide-blue-500/5"]
+    # per-side border colors
+    for side in "t r b l x y".split():
+        c += [f"border-{side}-green-600", f"border-{side}-stone-200/50", f"border-{side}-transparent"]
+    c += [f"border-l-{h}-500" for h in HUES]
     # arbitrary values
     c += ["w-[13px]", "h-[45%]", "min-w-[13px]", "max-w-[65ch]", "min-h-[7rem]", "max-h-[13px]",
           "p-[2.5rem]", "px-[3px]", "mt-[7px]", "m-[1.25em]", "gap-[7px]", "gap-x-[3px]", "gap-y-[9px]",

@@ -22,10 +22,108 @@ func usage() {
     println("machin-web-ui — agent-first design system for isomorphic machin apps")
     println("")
     println("usage:")
+    println("  machin-web-ui init [dir]                                     scaffold an isomorphic app (SSR + reactive wasm)")
+    println("  machin-web-ui add <component...> [--dir d]                   vendor component source into ./components/")
+    println("  machin-web-ui list                                           component registry (JSON)")
     println("  machin-web-ui css [paths...] [-o out.css] [--no-preflight]   scan files -> stylesheet")
     println("  machin-web-ui css - [--no-preflight]                         class list on stdin -> stylesheet")
     println("  machin-web-ui coverage                                       implemented Tailwind surface (JSON)")
     println("  machin-web-ui check <class...>                               resolve classes (JSON)")
+}
+
+// mkdirs creates every directory along a path ("a/b/c", absolute ok)
+func mkdirs(path) {
+    cur := ""
+    if has_prefix(path, "/") { cur = "/" }
+    for _, p := range split(path, "/") {
+        if len(p) == 0 { continue }
+        cur = cur + p
+        mkdir(cur)
+        cur = cur + "/"
+    }
+}
+
+func write_into(dir, rel, content) {
+    full := dir + "/" + rel
+    slash := 0 - 1
+    i := 0
+    while i < len(full) {
+        if charat(full, i) == "/" { slash = i }
+        i = i + 1
+    }
+    if slash > 0 { mkdirs(substr(full, 0, slash)) }
+    write_file(full, content)
+    if has_suffix(rel, ".sh") { system("chmod +x " + full) }
+}
+
+// components the starter template's app_view uses — vendored by init
+func starter_components() (xs) {
+    xs = []string{"ui", "button", "badge", "card", "input", "select", "form_field", "toast"}
+}
+
+func cmd_init(a) {
+    dir := "."
+    if len(a) > 2 && has_prefix(a[2], "-") == false { dir = a[2] }
+    tpl := embed_template()
+    comps := embed_components()
+    n := 0
+    for _, p := range sort_strings(keys(tpl)) {
+        write_into(dir, p, tpl[p])
+        n = n + 1
+    }
+    for _, cname := range starter_components() {
+        write_into(dir, "components/" + cname + ".src", comps[cname])
+        n = n + 1
+    }
+    println("scaffolded " + dir + " (" + str(n) + " files: isomorphic app + " + str(len(starter_components())) + " components)")
+    println("next:")
+    println("  cd " + dir + " && ./build.sh    # needs machin, zig, machin-web-ui on PATH")
+    println("  ./app                          # http://localhost:48100")
+    println("  machin-web-ui list             # more components: add via `machin-web-ui add <name>`")
+}
+
+func cmd_add(a) {
+    comps := embed_components()
+    dir := "components"
+    names := []string{}
+    i := 2
+    while i < len(a) {
+        if a[i] == "--dir" {
+            i = i + 1
+            if i < len(a) { dir = a[i] }
+        } else { names = append(names, a[i]) }
+        i = i + 1
+    }
+    bad := []string{}
+    for _, nm := range names {
+        if has(comps, nm) == false { bad = append(bad, nm) }
+    }
+    if len(bad) > 0 {
+        println("unknown component(s): " + join(bad, " "))
+        println("available: " + join(sort_strings(keys(comps)), " "))
+        exit(1)
+    }
+    if in_names(names, "ui") == false { names = append(names, "ui") }   // base helpers, always
+    for _, nm := range names {
+        write_into(".", dir + "/" + nm + ".src", comps[nm])
+        println("added " + dir + "/" + nm + ".src")
+    }
+}
+
+func in_names(xs, x) (yes) {
+    yes = false
+    for _, v := range xs {
+        if v == x { yes = true }
+    }
+}
+
+func cmd_list() {
+    descs := embed_component_descs()
+    items := []string{}
+    for _, nm := range sort_strings(keys(descs)) {
+        items = append(items, "{\"name\": \"" + nm + "\", \"description\": \"" + json_escape(descs[nm]) + "\"}")
+    }
+    println("[" + join(items, ",\n ") + "]")
 }
 
 func cmd_css(a) {
@@ -58,7 +156,7 @@ func cmd_css(a) {
     } else {
         if len(paths) == 0 { paths = append(paths, ".") }
         for _, p := range paths { classes = scan_path(classes, p) }
-        classes = sort_strings(classes)
+        classes = sort_by_rank(sort_strings(classes))
     }
     css := tw_css_mode(classes, warn)
     if preflight { css = tw_preflight() + css }
@@ -94,10 +192,10 @@ func cmd_coverage() {
     fams := []string{}
     fams = append(fams, cov_family("layout", "display, position, visibility, float/clear, box-sizing, isolation-free: static fixed absolute relative sticky, overflow{,-x,-y}-*, overscroll-*, object-*, aspect-*, z-{0..50,auto} (+negatives), order-*"))
     fams = append(fams, cov_family("spacing", "{p,m}{,x,y,t,r,b,l}-{spacing}; m*-auto; negative margins (-mt-2); space-{x,y}-{spacing} (+reverse, +negative)"))
-    fams = append(fams, cov_family("sizing", "{w,h}-{spacing|fraction|auto|full|screen|min|max|fit}, min-w/max-w/min-h/max-h (named scales + max-h-{spacing})"))
+    fams = append(fams, cov_family("sizing", "{w,h}-{spacing|fraction|auto|full|screen|min|max|fit}, min-w/max-w/min-h/max-h (named scales + spacing, v3.4)"))
     fams = append(fams, cov_family("inset", "inset{,-x,-y}/top/right/bottom/left-{spacing|auto|full|fraction} (+negatives)"))
     fams = append(fams, cov_family("colors", "{bg,text,border}-{palette|black|white|transparent|current|inherit} — full v3 default palette (244) — with opacity modifiers (bg-red-500/50, also ring/divide)"))
-    fams = append(fams, cov_family("borders", "border widths incl. per-side, border styles, rounded-*, divide-{x,y}{,-0,-2,-4,-8,-reverse}, divide colors+styles, ring{,-0,-1,-2,-4,-8,-inset}, ring colors, ring-offset-{w,color}, outline-*"))
+    fams = append(fams, cov_family("borders", "border widths AND colors incl. per-side/axis (border-l-red-500, +modifiers), border styles, rounded-*, divide-{x,y}{,-0,-2,-4,-8,-reverse}, divide colors+styles, ring{,-0,-1,-2,-4,-8,-inset}, ring colors, ring-offset-{w,color}, outline-*"))
     fams = append(fams, cov_family("typography", "text-{xs..9xl}, text-align, font-{weights,sans,serif,mono}, italic, tracking-*, leading-*, decoration (style/width/color), underline-offset, text-transform, truncate/break/whitespace, list-*, align-*"))
     fams = append(fams, cov_family("flexbox", "direction/wrap, flex-{1,auto,initial,none}, grow/shrink, items/justify/content/self/place-*, justify-items/self"))
     fams = append(fams, cov_family("grid", "grid-cols-{1..12,none}, col-span, grid-rows-{1..6,none}, row-span, grid-flow-*, gap{,-x,-y}-{spacing}"))
@@ -119,6 +217,7 @@ func cmd_coverage() {
     out = out + "  \"preflight\": \"tailwind base (reset + --tw-* variable defaults), " + str(len(tw_preflight())) + " bytes, generated from the oracle; disable with --no-preflight\",\n"
     out = out + "  \"variants\": [\"hover\", \"focus\", \"active\", \"disabled\", \"visited\", \"focus-within\", \"focus-visible\", \"group-hover\", \"group-focus\", \"peer-hover\", \"peer-focus\", \"peer-checked\", \"peer-disabled\", \"dark\", \"sm\", \"md\", \"lg\", \"xl\", \"2xl\"],\n"
     out = out + "  \"variantStacking\": true,\n"
+    out = out + "  \"cascadeOrder\": \"same-property conflicts emit shorthand -> axis -> side, matching Tailwind (oracle-checked pairs); exotic same-plugin combos (e.g. inline + inline-block on one element) may order differently\",\n"
     out = out + "  \"families\": [\n" + join(fams, ",\n") + "\n  ],\n"
     out = out + "  \"notImplemented\": [\n" + join(missing, ",\n") + "\n  ],\n"
     out = out + "  \"unknownPolicy\": \"explicit class lists (css -, check): unknown classes reported loudly; file scan: non-resolving tokens skipped silently (Tailwind JIT semantics)\"\n"
@@ -131,6 +230,12 @@ func main() {
     if len(a) < 2 { usage()  exit(2) }
     verb := a[1]
     if verb == "css" { cmd_css(a) }
+    else if verb == "init" { cmd_init(a) }
+    else if verb == "add" {
+        if len(a) < 3 { usage()  exit(2) }
+        cmd_add(a)
+    }
+    else if verb == "list" { cmd_list() }
     else if verb == "coverage" { cmd_coverage() }
     else if verb == "check" {
         if len(a) < 3 { usage()  exit(2) }

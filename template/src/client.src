@@ -1,0 +1,29 @@
+// client.src — the wasm client. State and view logic live in machin; the JS
+// host only forwards clicks (data-action -> export) and applies patches.
+// Composed with framework/reactive + models + components, built to wasm.
+
+extern "env" {
+    fn toast_show(string)       // host effect: unhide #<id>, auto-hide after 2.5s
+}
+
+var count = 0                   // signal id
+var toasts = 0                  // how many notifications fired
+
+// start hydrates the server-rendered DOM: app_view() with a slot() whose
+// data-s name matches the SSR span, so the binding attaches without a re-render.
+export func start() {
+    count = signal(0)
+    hydrate(app_view(slot("count", func() { return str(get(count)) })))
+    bind("toast_msg", func() { get(count)  return "count is " + str(get(count)) })
+}
+
+// bump: data-action="bump" (the Increment button)
+export func bump(arg) {
+    set(count, get(count) + 1)
+}
+
+// notify: data-action="notify" (the Notify button)
+export func notify(arg) {
+    toasts = toasts + 1
+    toast_show("toast")
+}
