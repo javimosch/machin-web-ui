@@ -885,7 +885,10 @@ func sort_by_rank(xs) (out) {
     i := 1
     while i < len(out) {
         j := i
-        while j > 0 && tw_rank(out[j]) < tw_rank(out[j - 1]) {
+        // NOTE: the bound and the compare are separate checks — MFL's && does
+        // not short-circuit, so `j > 0 && f(out[j - 1])` would index out[-1]
+        while j > 0 {
+            if tw_rank(out[j]) < tw_rank(out[j - 1]) == false { break }
             t := out[j]
             out[j] = out[j - 1]
             out[j - 1] = t
@@ -916,7 +919,10 @@ func sort_by_depth(xs) (out) {
     i := 1
     while i < len(out) {
         j := i
-        while j > 0 && tw_variant_depth(out[j]) < tw_variant_depth(out[j - 1]) {
+        // NOTE: the bound and the compare are separate checks — MFL's && does
+        // not short-circuit, so `j > 0 && f(out[j - 1])` would index out[-1]
+        while j > 0 {
+            if tw_variant_depth(out[j]) < tw_variant_depth(out[j - 1]) == false { break }
             t := out[j]
             out[j] = out[j - 1]
             out[j - 1] = t
