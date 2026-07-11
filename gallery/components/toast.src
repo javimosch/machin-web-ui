@@ -1,0 +1,18 @@
+// toast.src — bottom-right notification. Render the container once (hidden);
+// the client shows it by toggling "hidden" on #<id> and patching its data-s
+// text slot. Kind tints the left accent: "neutral", "green", "red".
+
+func ui_toast_classes(kind) (c) {
+    c = "pointer-events-auto flex items-center gap-3 rounded-md border border-stone-200 bg-white px-4 py-3 text-sm text-stone-900 border-l-2"
+    if kind == "green" { c = c + " border-l-green-600" }
+    if kind == "red" { c = c + " border-l-red-600" }
+    if kind == "neutral" { c = c + " border-l-stone-400" }
+}
+
+func ui_toast(id, slot_name, kind, open) (h) {
+    vis := " hidden"
+    if open { vis = "" }
+    h = "<div id=\"" + id + "\" class=\"fixed bottom-4 right-4 z-50" + vis + "\">"
+    h = h + "<div class=\"" + ui_toast_classes(kind) + "\"><span data-s=\"" + slot_name + "\"></span></div>"
+    h = h + "</div>"
+}

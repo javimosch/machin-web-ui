@@ -144,6 +144,8 @@ bin/tailwindcss        dev-only oracle binary (not committed)
       headless Chrome
 - [x] `add <component>` + `list` — 10 components + base helpers, minimalist
       design language, vendored source (you own it)
-- [ ] component gallery app, deployed (screenshot-verify target)
+- [x] component gallery app **live at [ui.intrane.fr](https://ui.intrane.fr)** —
+      every component SSR'd + hydrated; `gallery/e2e.js` drives it in headless
+      Chrome (works against localhost or the live site via GALLERY_URL)
 - [ ] full canonical rule ordering generated from the oracle (today: structural
       shorthand→axis→side ranking, oracle-checked on conflict pairs)

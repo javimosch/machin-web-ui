@@ -3,7 +3,10 @@
 its own registry (same move as `machin guide`: version-exact, offline,
 self-describing). Component descriptions come from each file's first-line
 comment ("// <name>.src — description")."""
-import json, pathlib, re
+import functools, json, pathlib, re
+
+# MFL string escaping matches JSON's ASCII escapes but not \uXXXX — keep UTF-8 raw
+json.dumps = functools.partial(json.dumps, ensure_ascii=False)
 
 ROOT = pathlib.Path(__file__).parent.parent
 

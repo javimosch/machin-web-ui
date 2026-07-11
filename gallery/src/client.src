@@ -1,0 +1,38 @@
+// client.src — the gallery's wasm client: counter signal, tabs, dialog
+// show/hide, toast. The JS host forwards data-action clicks to the
+// same-named exports below.
+
+extern "env" {
+    fn toast_show(string)                       // host: unhide #<id>, auto-hide after 2.5s
+    fn dom_show(string, i32)                    // host: toggle "hidden" on #<id>
+    fn tab_mark(string, i32, string, string)    // host: re-class #<nav>'s children (idx, active cls, idle cls)
+}
+
+var count = 0                   // signal id
+var tab_sig = 0                 // signal id: active tab index
+
+export func start() {
+    count = signal(0)
+    tab_sig = signal(0)
+    hydrate(app_view(
+        slot("count", func() { return str(get(count)) }),
+        slot("panel", func() { return tab_panel_text(get(tab_sig)) })))
+    bind("toast_msg", func() { get(count)  return "count is " + str(get(count)) })
+}
+
+export func bump(arg) { set(count, get(count) + 1) }
+
+export func reset(arg) { set(count, 0) }
+
+export func notify(arg) { toast_show("toast") }
+
+// data-action="tab" (see components/tabs.src): switch the panel text and
+// re-mark the active tab — classes still come from the MFL component.
+export func tab(arg) {
+    set(tab_sig, int(arg))
+    tab_mark("tabs", int(arg), ui_tab_classes(true), ui_tab_classes(false))
+}
+
+export func dlg_open(arg) { dom_show("dlg", 1) }
+
+export func dlg_close(arg) { dom_show("dlg", 0) }
