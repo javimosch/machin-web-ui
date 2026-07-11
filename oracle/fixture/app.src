@@ -18,3 +18,10 @@ func layout() (h) {
     h = "<main class=\"mx-auto flex w-full flex-col gap-6 p-8 md:w-2/3 lg:grid lg:grid-cols-3 2xl:gap-8\">"
     h = h + "</main>"
 }
+
+func modal() (h) {
+    h = "<div class=\"fixed inset-0 z-50 bg-black/50 transition opacity-0\">"
+    h = h + "<div class=\"absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[28rem] max-w-[90vw] rounded-xl ring-1 ring-stone-950/10 divide-y divide-stone-200\">"
+    h = h + "<button class=\"peer-checked:underline group-hover:opacity-75 hover:-mt-px animate-pulse bg-[#f7f6f3] text-[15px]\">x</button>"
+    h = h + "</div></div>"
+}

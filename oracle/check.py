@@ -6,6 +6,7 @@ engines, normalizes each stylesheet into a set of
 (media-conditions, selector, declarations) triples, and diffs them.
 """
 import re, subprocess, sys, itertools, pathlib
+from families import static_gen, param_corpus
 
 HERE = pathlib.Path(__file__).parent
 ROOT = HERE.parent
@@ -56,6 +57,7 @@ def corpus():
     for v, b in itertools.product(variants, bases): cls.append(f"{v}:{b}")
     stacks = ["md:hover", "dark:hover", "md:dark", "lg:focus", "2xl:dark:hover", "sm:focus-visible"]
     for st, b in itertools.product(stacks, bases): cls.append(f"{st}:{b}")
+    cls += static_gen() + param_corpus()
     return sorted(set(cls))
 
 # ---------- css normalization ----------
@@ -89,7 +91,7 @@ def normalize(css):
     return out
 
 def normalize2(css):
-    """proper recursive-descent parse (handles nested @media)."""
+    """proper recursive-descent parse (handles nested @media and @keyframes)."""
     css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
     out = set()
     def parse(s, i, media):
@@ -100,6 +102,15 @@ def normalize2(css):
                 head = buf.strip(); buf = ""
                 if head.startswith("@media"):
                     i = parse(s, i + 1, media + [head[len("@media"):].strip()])
+                elif head.startswith("@keyframes"):
+                    depth, j = 1, i + 1
+                    while depth:
+                        if s[j] == "{": depth += 1
+                        elif s[j] == "}": depth -= 1
+                        j += 1
+                    body = " ".join(s[i+1:j-1].split())
+                    out.add((frozenset(media), head, frozenset([body])))
+                    i = j - 1
                 else:
                     j = s.index("}", i + 1)
                     decls = frozenset(d.strip() for d in s[i+1:j].split(";") if d.strip())

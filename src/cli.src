@@ -71,17 +71,13 @@ func cmd_css(a) {
 }
 
 func cmd_check(a) {
-    pal := tw_palette()
-    sp := tw_spacing()
-    st := tw_static()
-    fr := tw_fractions()
-    pm := tw_pm_heads()
-    bs := tw_border_sides()
+    c := tw_ctx()
+    kf_done := make(map[string]bool)
     items := []string{}
     i := 2
     while i < len(a) {
         cls := a[i]
-        rule, ok := tw_rule(cls, pal, sp, st, fr, pm, bs)
+        rule, ok := tw_rule(cls, c, kf_done)
         it := "{\"class\": \"" + json_escape(cls) + "\", \"known\": "
         if ok { it = it + "true, \"css\": \"" + json_escape(rule) + "\"}" } else { it = it + "false}" }
         items = append(items, it)
@@ -96,19 +92,23 @@ func cov_family(name, surface) (s) {
 
 func cmd_coverage() {
     fams := []string{}
-    fams = append(fams, cov_family("display", "block inline-block inline flex inline-flex grid inline-grid hidden"))
-    fams = append(fams, cov_family("padding/margin", "{p,m}{,x,y,t,r,b,l}-{spacing}; m*-auto"))
-    fams = append(fams, cov_family("sizing", "{w,h}-{spacing|fraction|auto|full|screen|min|max|fit} (twelfths on both axes)"))
-    fams = append(fams, cov_family("colors", "{bg,text,border}-{palette|black|white|transparent|current|inherit} — full v3 default palette (244)"))
-    fams = append(fams, cov_family("border-width", "border{,-0,-2,-4,-8} and per-side border-{x,y,t,r,b,l}{,-0,-2,-4,-8}"))
-    fams = append(fams, cov_family("border-radius", "rounded{,-none,-sm,-md,-lg,-xl,-2xl,-3xl,-full} (whole element only)"))
-    fams = append(fams, cov_family("typography", "text-{xs..9xl}, text-{left,center,right,justify}, font-{thin..black}, italic/not-italic, tracking-*, leading-{none..loose,3..10}"))
-    fams = append(fams, cov_family("flexbox", "flex-{row,col}{,-reverse}, flex-{wrap,wrap-reverse,nowrap}, flex-{1,auto,initial,none}, grow{,-0}, shrink{,-0}, items-*, justify-*"))
-    fams = append(fams, cov_family("grid", "grid-cols-{1..12,none}, col-span-{1..12,full}, col-auto"))
-    fams = append(fams, cov_family("gap", "gap{,-x,-y}-{spacing}"))
-    fams = append(fams, cov_family("effects", "shadow{,-sm,-md,-lg,-xl,-2xl,-inner,-none}"))
+    fams = append(fams, cov_family("layout", "display, position, visibility, float/clear, box-sizing, isolation-free: static fixed absolute relative sticky, overflow{,-x,-y}-*, overscroll-*, object-*, aspect-*, z-{0..50,auto} (+negatives), order-*"))
+    fams = append(fams, cov_family("spacing", "{p,m}{,x,y,t,r,b,l}-{spacing}; m*-auto; negative margins (-mt-2); space-{x,y}-{spacing} (+reverse, +negative)"))
+    fams = append(fams, cov_family("sizing", "{w,h}-{spacing|fraction|auto|full|screen|min|max|fit}, min-w/max-w/min-h/max-h (named scales + max-h-{spacing})"))
+    fams = append(fams, cov_family("inset", "inset{,-x,-y}/top/right/bottom/left-{spacing|auto|full|fraction} (+negatives)"))
+    fams = append(fams, cov_family("colors", "{bg,text,border}-{palette|black|white|transparent|current|inherit} — full v3 default palette (244) — with opacity modifiers (bg-red-500/50, also ring/divide)"))
+    fams = append(fams, cov_family("borders", "border widths incl. per-side, border styles, rounded-*, divide-{x,y}{,-0,-2,-4,-8,-reverse}, divide colors+styles, ring{,-0,-1,-2,-4,-8,-inset}, ring colors, ring-offset-{w,color}, outline-*"))
+    fams = append(fams, cov_family("typography", "text-{xs..9xl}, text-align, font-{weights,sans,serif,mono}, italic, tracking-*, leading-*, decoration (style/width/color), underline-offset, text-transform, truncate/break/whitespace, list-*, align-*"))
+    fams = append(fams, cov_family("flexbox", "direction/wrap, flex-{1,auto,initial,none}, grow/shrink, items/justify/content/self/place-*, justify-items/self"))
+    fams = append(fams, cov_family("grid", "grid-cols-{1..12,none}, col-span, grid-rows-{1..6,none}, row-span, grid-flow-*, gap{,-x,-y}-{spacing}"))
+    fams = append(fams, cov_family("backgrounds", "bg-gradient-to-*, from/via/to-{palette+specials}, bg attachment/clip/origin/position/repeat/size"))
+    fams = append(fams, cov_family("effects", "shadow-*, opacity-{0..100 step 5}"))
+    fams = append(fams, cov_family("transitions", "transition{,-none,-all,-colors,-opacity,-shadow,-transform}, duration/ease/delay, animate-{none,spin,ping,pulse,bounce} (with @keyframes)"))
+    fams = append(fams, cov_family("transforms", "translate-{x,y} (+negatives), rotate/scale{,-x,-y}/skew (+negatives), origin-*, transform{,-gpu,-none}"))
+    fams = append(fams, cov_family("interactivity", "cursor-*, select-*, pointer-events, resize, scroll-{auto,smooth}, appearance-none"))
+    fams = append(fams, cov_family("arbitrary-values", "head-[value] for sizing/spacing/inset/gap/rounded/z/tracking/leading/text-size/border-width, colors as #hex or rgb(r,g,b) for bg/text/border; underscores become spaces (w-[calc(100%_-_2rem)])"))
     missing := []string{}
-    for _, x := range []string{"arbitrary values (w-[13px])", "color opacity modifiers (bg-red-500/50)", "negative values (-mt-2)", "group-*/peer-* variants", "position/inset/z-index", "overflow/object/aspect", "min-w/max-w/min-h/max-h", "ring/outline/divide/space-between-x-y", "opacity/mix-blend/filter", "transition/animation/transform", "cursor/select/pointer-events", "font-family/decoration/truncate/whitespace", "bg-gradient/bg-position/bg-size", "container/columns", "tailwind.config customization (default theme only)"} {
+    for _, x := range []string{"container/columns", "filters (blur/brightness/...), backdrop-filters, mix-blend", "will-change/content/caret/accent/scroll-snap/touch", "aria-*/data-* variants, group/peer named modifiers, has-*", "arbitrary properties ([color:red]) and arbitrary variants", "hsl()/named-color arbitrary values", "tailwind.config customization (default theme only)"} {
         missing = append(missing, "    \"" + x + "\"")
     }
     out := "{\n"
@@ -117,7 +117,7 @@ func cmd_coverage() {
     out = out + "  \"verification\": \"differential-tested vs the tailwindcss standalone binary (oracle/check.py): rule-for-rule identical output on the full corpus\",\n"
     out = out + "  \"palette\": " + str(len(tw_palette())) + ",\n"
     out = out + "  \"preflight\": \"tailwind base (reset + --tw-* variable defaults), " + str(len(tw_preflight())) + " bytes, generated from the oracle; disable with --no-preflight\",\n"
-    out = out + "  \"variants\": [\"hover\", \"focus\", \"active\", \"disabled\", \"visited\", \"focus-within\", \"focus-visible\", \"dark\", \"sm\", \"md\", \"lg\", \"xl\", \"2xl\"],\n"
+    out = out + "  \"variants\": [\"hover\", \"focus\", \"active\", \"disabled\", \"visited\", \"focus-within\", \"focus-visible\", \"group-hover\", \"group-focus\", \"peer-hover\", \"peer-focus\", \"peer-checked\", \"peer-disabled\", \"dark\", \"sm\", \"md\", \"lg\", \"xl\", \"2xl\"],\n"
     out = out + "  \"variantStacking\": true,\n"
     out = out + "  \"families\": [\n" + join(fams, ",\n") + "\n  ],\n"
     out = out + "  \"notImplemented\": [\n" + join(missing, ",\n") + "\n  ],\n"

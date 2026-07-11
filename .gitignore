@@ -11,3 +11,5 @@ oracle/oracle*.css
 oracle/ours.css
 oracle/preflight_*.css
 oracle/tailwind.fixture.config.js
+oracle/static_gen.css
+oracle/probe_*

@@ -18,8 +18,8 @@ real? Verified by **differential testing against the real thing** — the
 of user apps):
 
 ```
-corpus (1465 classes): oracle rules: 1465 | ours: 1465
-scanner (oracle/fixture): oracle rules: 41 | ours: 41
+corpus (3471 classes): oracle rules: 3476 | ours: 3476
+scanner (oracle/fixture): oracle rules: 66 | ours: 66
 preflight: byte-identical with @tailwind base
 PASS: corpus + scanner + preflight identical with tailwindcss v3.4.17
 ```
@@ -44,25 +44,40 @@ declarations, `--tw-*-opacity` variables, `-moz-` autoprefixes, the `:visited`
 alpha-stripping quirk, media-query nesting — is set-identical to Tailwind's
 output for the whole corpus.
 
-|                    | twgen (this repo) | tailwindcss standalone |
-|--------------------|-------------------|------------------------|
-| corpus (1,465 cls) | **71 ms**         | 958 ms                 |
-| binary size        | **55 kB**         | 43 MB                  |
-| runtime deps       | none              | none (bundled Node)    |
+|                    | machin-web-ui | tailwindcss standalone |
+|--------------------|---------------|------------------------|
+| corpus (3,471 cls) | **16 ms**     | 1,342 ms               |
+| binary size        | **172 kB**    | 43 MB                  |
+| runtime deps       | none          | none (bundled Node)    |
 
-### Spike scope (all oracle-verified)
+### Implemented surface (all oracle-verified — `coverage` has the full JSON)
 
-- **Utilities**: display, padding/margin, width/height (scale + fractions +
-  min/max/fit), bg/text/border colors (full 244-color default palette,
-  extracted from the oracle — `oracle/` regenerates `src/tw_palette.src`),
-  border widths/sides, rounded, font-size/weight, tracking, leading, flex
-  (direction/wrap/grow/shrink/items/justify), grid-cols/col-span, gap,
-  text-align, shadows.
+- **Utilities**: layout (display/position/visibility/overflow/object/aspect/
+  z/order), spacing (+ negative margins, `space-x/y` with reverse), sizing
+  (+ min/max variants), inset (+ negatives), the full 244-color default
+  palette for bg/text/border **with opacity modifiers** (`bg-red-500/50`,
+  also ring/divide), borders (widths/styles/radius/divide/ring/outline),
+  typography (sizes/weights/families/decoration/whitespace/truncate),
+  flexbox + grid (incl. rows/flow/place-*), gradients (`from/via/to-*`),
+  shadows, opacity, transitions + `animate-*` (with `@keyframes`), transforms
+  (translate/rotate/scale/skew, negatable), interactivity (cursor/select/…).
+- **Arbitrary values**: `w-[13px]`, `top-[117px]`, `text-[15px]`,
+  `bg-[#f7f6f3]`, `border-[rgb(1,2,3)]`, `w-[calc(100%_-_2rem)]` — with
+  Tailwind's exact selector escaping (`\2c ` commas, `\3` leading digits).
 - **Variants**, stacking included (`2xl:dark:hover:bg-stone-700`):
-  hover/focus/active/disabled/visited/focus-within/focus-visible, `dark:`
-  (media strategy), responsive `sm: md: lg: xl: 2xl:`.
-- Unknown classes are **loud**: emitted in a `/* tw-unknown: ... */` header,
-  never silently dropped.
+  hover/focus/active/disabled/visited/focus-within/focus-visible,
+  **group-hover/focus, peer-hover/focus/checked/disabled**, `dark:` (media
+  strategy), responsive `sm: md: lg: xl: 2xl:`.
+- Unknown classes are **loud** in explicit-list mode: emitted in a
+  `/* tw-unknown: ... */` header, never silently dropped.
+
+Every finite utility set is **generated from the oracle itself**
+(`oracle/gen_static.py` → `src/tw_static_gen.src`, 526 classes + keyframes;
+same for the palette and preflight) — the tables are ground truth by
+construction, and what the oracle doesn't resolve, this engine doesn't either.
+The hand-written engine code only implements the genuinely parametric surface:
+spacing families, negatives, color templates, opacity modifiers, arbitrary
+values, and variant/selector composition.
 
 ## Try it
 
@@ -99,7 +114,8 @@ bin/tailwindcss        dev-only oracle binary (not committed)
 - [x] **M0 spike — tw engine core**, oracle-verified
 - [x] preflight + `.mfl`/`.src` file scanner (`machin-web-ui css`), oracle-verified
 - [x] `machin-web-ui coverage` + `check` — honest, queryable compat surface
-- [ ] arbitrary values (`w-[13px]`), `group-hover:`, remaining utility families
+- [x] arbitrary values, `group-*`/`peer-*`, opacity modifiers, negatives, and
+      ~all remaining v3 core families (see `coverage` for the exact list)
 - [ ] `init` — isomorphic app template (from boilerplate-cli-ui-machin-isomorphic)
 - [ ] `add <component>` — vendor MFL component source (button, card, dialog, ...)
       styled to the minimalist design language

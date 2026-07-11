@@ -1,12 +1,30 @@
-// tw.src — a Tailwind-compatible CSS engine in pure MFL (spike scope).
+// tw.src — a Tailwind-compatible CSS engine in pure MFL.
 // Given a list of class names, emits the CSS rules Tailwind v3.4 would emit
 // for them (differential-tested against the tailwindcss standalone binary).
 //
-// Spike families: display, padding/margin, width/height, bg/text/border color,
-// border width, rounded, font-size/weight, flex, grid-cols/col-span, gap,
-// text-align, tracking, leading, shadow.
-// Variants: hover/focus/active/disabled/focus-within/focus-visible/visited,
-// dark (media strategy), responsive sm/md/lg/xl/2xl. Variants stack.
+// Architecture: every FINITE utility set lives in a lookup table generated
+// verbatim from the oracle (tw_static_gen.src, tw_palette.src); the engine
+// code below only implements the genuinely parametric surface — spacing
+// families, negatives, color templates, opacity modifiers, arbitrary values,
+// and variant/selector composition.
+
+type TwCtx struct {
+    pal map[string]string
+    hex map[string]string
+    sp map[string]string
+    st map[string]string
+    sg map[string]string
+    sfx map[string]string
+    fr map[string]string
+    pm map[string]string
+    bs map[string]string
+    ins map[string]string
+    kf map[string]string
+}
+
+func tw_ctx() (c) {
+    c = TwCtx{pal: tw_palette(), hex: tw_palette_hex(), sp: tw_spacing(), st: tw_static(), sg: tw_static_gen(), sfx: tw_suffix_gen(), fr: tw_fractions(), pm: tw_pm_heads(), bs: tw_border_sides(), ins: tw_inset_heads(), kf: tw_keyframes()}
+}
 
 // --- spacing scale (v3 default theme) ---
 func tw_spacing() (m) {
@@ -48,7 +66,7 @@ func tw_spacing() (m) {
     m["96"] = "24rem"
 }
 
-// --- fraction scale for w-/h- ---
+// --- fraction scale for w-/h-/inset/translate ---
 func tw_fractions() (m) {
     m = make(map[string]string)
     m["1/2"] = "50%"
@@ -83,7 +101,7 @@ func tw_shadow_decl(plain, colored) (d) {
     d = "--tw-shadow: " + plain + ";\n  --tw-shadow-colored: " + colored + ";\n  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)"
 }
 
-// --- non-parametric utilities: full class name -> declarations ---
+// --- non-parametric utilities kept by hand (the original spike set) ---
 func tw_static() (m) {
     m = make(map[string]string)
     // display
@@ -226,6 +244,18 @@ func tw_pm_heads() (m) {
     m["ml"] = "margin-left"
 }
 
+// inset head -> comma-joined properties
+func tw_inset_heads() (m) {
+    m = make(map[string]string)
+    m["inset"] = "inset"
+    m["inset-x"] = "left,right"
+    m["inset-y"] = "top,bottom"
+    m["top"] = "top"
+    m["right"] = "right"
+    m["bottom"] = "bottom"
+    m["left"] = "left"
+}
+
 // border side letter -> comma-joined properties
 func tw_border_sides() (m) {
     m = make(map[string]string)
@@ -254,21 +284,46 @@ func tw_props_decl(props, val) (d) {
     d = join(outs, ";\n  ")
 }
 
-// color utilities: bg-*, text-*, border-* -> declarations
-func tw_color(varname, prop, name, pal) (d, ok) {
+// n in [0,100] -> Tailwind's alpha formatting: 0, 0.05, 0.25, 0.4, 1
+func tw_frac100(n) (v, ok) {
+    if tw_is_digits(n) == false { ok = false  return }
+    ok = true
+    x := parse_int(n)
+    if x > 100 { ok = false  return }
+    if x == 0 { v = "0"  return }
+    if x == 100 { v = "1"  return }
+    if x % 10 == 0 { v = "0." + str(x / 10)  return }
+    if x < 10 { v = "0.0" + str(x)  return }
+    v = "0." + str(x)
+}
+
+// color utilities: bg-*, text-*, border-* -> declarations.
+// name may carry an opacity modifier ("red-500/50") -> fixed-alpha rgb().
+func tw_color(varname, prop, name, c) (d, ok) {
     ok = true
     if name == "transparent" { d = prop + ": transparent"  return }
     if name == "inherit" { d = prop + ": inherit"  return }
     if name == "current" { d = prop + ": currentColor"  return }
-    if has(pal, name) {
-        d = "--tw-" + varname + "-opacity: 1;\n  " + prop + ": rgb(" + pal[name] + " / var(--tw-" + varname + "-opacity, 1))"
+    slash := index(name, "/")
+    if slash >= 0 {
+        cname := substr(name, 0, slash)
+        a, aok := tw_frac100(substr(name, slash + 1, len(name)))
+        if aok && has(c.pal, cname) {
+            d = prop + ": rgb(" + c.pal[cname] + " / " + a + ")"
+            return
+        }
+        ok = false
+        return
+    }
+    if has(c.pal, name) {
+        d = "--tw-" + varname + "-opacity: 1;\n  " + prop + ": rgb(" + c.pal[name] + " / var(--tw-" + varname + "-opacity, 1))"
         return
     }
     ok = false
 }
 
 // w-*/h-* sizing
-func tw_size(prop, tok, sp, fr) (d, ok) {
+func tw_size(prop, tok, c) (d, ok) {
     ok = true
     v := ""
     if tok == "auto" { v = "auto" }
@@ -282,45 +337,241 @@ func tw_size(prop, tok, sp, fr) (d, ok) {
         d = prop + ": -moz-" + v + ";\n  " + prop + ": " + v
         return
     }
-    else if has(sp, tok) { v = sp[tok] }
-    else if has(fr, tok) { v = fr[tok] }
+    else if has(c.sp, tok) { v = c.sp[tok] }
+    else if has(c.fr, tok) { v = c.fr[tok] }
     else { ok = false  return }
     d = prop + ": " + v
 }
 
-// resolve a base utility (no variants) to its declarations
-func tw_decls(base, pal, sp, st, fr, pm, bs) (d, ok) {
+// inset value: spacing | auto | full | halves/thirds/quarters
+func tw_inset_val(tok, neg, c) (v, ok) {
     ok = true
-    if has(st, base) { d = st[base]  return }
+    if tok == "auto" {
+        v = "auto"
+        if neg { ok = false }
+        return
+    }
+    if tok == "full" { v = "100%" }
+    else if tok == "1/2" || tok == "1/3" || tok == "2/3" || tok == "1/4" || tok == "2/4" || tok == "3/4" { v = c.fr[tok] }
+    else if has(c.sp, tok) { v = c.sp[tok] }
+    else { ok = false  return }
+    if neg { v = "-" + v }
+}
+
+func tw_transform_chain() (s) {
+    s = "transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))"
+}
+
+// translate-x/y: spacing | full | halves/thirds/quarters, negatable
+func tw_translate(axis, tok, neg, c) (d, ok) {
+    ok = true
+    v := ""
+    if tok == "full" { v = "100%" }
+    else if tok == "1/2" || tok == "1/3" || tok == "2/3" || tok == "1/4" || tok == "2/4" || tok == "3/4" { v = c.fr[tok] }
+    else if has(c.sp, tok) { v = c.sp[tok] }
+    else { ok = false  return }
+    if neg { v = "-" + v }
+    d = "--tw-translate-" + axis + ": " + v + ";\n  " + tw_transform_chain()
+}
+
+func tw_space_suffix() (s) { s = " > :not([hidden]) ~ :not([hidden])" }
+
+// space-x/y-N: sibling margins driven by the --tw-space vars
+func tw_space_between(axis, tok, neg, c) (d, sfx, ok) {
+    if has(c.sp, tok) == false { ok = false  return }
+    ok = true
+    sfx = tw_space_suffix()
+    v := c.sp[tok]
+    if neg { v = "-" + v }
+    if axis == "x" {
+        d = "--tw-space-x-reverse: 0;\n  margin-right: calc(" + v + " * var(--tw-space-x-reverse));\n  margin-left: calc(" + v + " * calc(1 - var(--tw-space-x-reverse)))"
+    } else {
+        d = "--tw-space-y-reverse: 0;\n  margin-top: calc(" + v + " * calc(1 - var(--tw-space-y-reverse)));\n  margin-bottom: calc(" + v + " * var(--tw-space-y-reverse))"
+    }
+}
+
+// #rgb / #rrggbb -> "R G B" decimal triplet
+func tw_hex_triplet(hx) (t, ok) {
+    hex := "0123456789abcdef"
+    h := to_lower(hx)
+    ok = true
+    if len(h) == 3 {
+        h = charat(h, 0) + charat(h, 0) + charat(h, 1) + charat(h, 1) + charat(h, 2) + charat(h, 2)
+    }
+    if len(h) != 6 { ok = false  return }
+    vals := []string{}
+    i := 0
+    while i < 6 {
+        hi := index(hex, charat(h, i))
+        lo := index(hex, charat(h, i + 1))
+        if hi < 0 || lo < 0 { ok = false  return }
+        vals = append(vals, str(hi * 16 + lo))
+        i = i + 2
+    }
+    t = join(vals, " ")
+}
+
+// arbitrary color value "#0af" / "rgb(1,2,3)" -> "R G B" triplet
+func tw_arb_triplet(inner) (t, ok) {
+    if has_prefix(inner, "#") {
+        t, ok = tw_hex_triplet(substr(inner, 1, len(inner)))
+        return
+    }
+    if has_prefix(inner, "rgb(") && has_suffix(inner, ")") {
+        body := substr(inner, 4, len(inner) - 1)
+        parts := split(replace(body, " ", ""), ",")
+        if len(parts) == 3 && tw_is_digits(parts[0]) && tw_is_digits(parts[1]) && tw_is_digits(parts[2]) {
+            t = join(parts, " ")
+            ok = true
+            return
+        }
+    }
+    ok = false
+}
+
+func tw_is_colorish(inner) (ok) {
+    ok = has_prefix(inner, "#") || has_prefix(inner, "rgb(")
+}
+
+// arbitrary values: head-[value] (underscores in value mean spaces)
+func tw_arbitrary(base, c) (d, ok) {
+    lb := index(base, "-[")
+    head := substr(base, 0, lb)
+    inner := replace(substr(base, lb + 2, len(base) - 1), "_", " ")
+    ok = true
+    if len(inner) == 0 { ok = false  return }
+    colorish := tw_is_colorish(inner)
+    if head == "bg" || head == "text" || head == "border" {
+        if colorish {
+            t, tok := tw_arb_triplet(inner)
+            if tok == false { ok = false  return }
+            vn := head
+            prop := "background-color"
+            if head == "text" { prop = "color" }
+            if head == "border" { prop = "border-color" }
+            d = "--tw-" + vn + "-opacity: 1;\n  " + prop + ": rgb(" + t + " / var(--tw-" + vn + "-opacity, 1))"
+            return
+        }
+        if head == "text" { d = "font-size: " + inner  return }
+        if head == "border" { d = "border-width: " + inner  return }
+        ok = false
+        return
+    }
+    if head == "w" { d = "width: " + inner  return }
+    if head == "h" { d = "height: " + inner  return }
+    if head == "min-w" { d = "min-width: " + inner  return }
+    if head == "max-w" { d = "max-width: " + inner  return }
+    if head == "min-h" { d = "min-height: " + inner  return }
+    if head == "max-h" { d = "max-height: " + inner  return }
+    if head == "z" { d = "z-index: " + inner  return }
+    if head == "rounded" { d = "border-radius: " + inner  return }
+    if head == "tracking" { d = "letter-spacing: " + inner  return }
+    if head == "leading" { d = "line-height: " + inner  return }
+    if head == "gap" { d = "gap: " + inner  return }
+    if head == "gap-x" { d = "-moz-column-gap: " + inner + ";\n  column-gap: " + inner  return }
+    if head == "gap-y" { d = "row-gap: " + inner  return }
+    if has(c.pm, head) { d = tw_props_decl(c.pm[head], inner)  return }
+    if has(c.ins, head) { d = tw_props_decl(c.ins[head], inner)  return }
+    ok = false
+}
+
+// negated utilities: -mt-2, -inset-1, -translate-x-4, -space-y-2
+func tw_neg(base, c) (d, sfx, ok) {
+    dash := index(base, "-")
+    if dash < 0 { ok = false  return }
+    head := substr(base, 0, dash)
+    rest := substr(base, dash + 1, len(base))
+    if has(c.pm, head) && charat(head, 0) == "m" {
+        if has(c.sp, rest) {
+            d = tw_props_decl(c.pm[head], "-" + c.sp[rest])
+            ok = true
+        } else { ok = false }
+        return
+    }
+    if has_prefix(base, "inset-x-") || has_prefix(base, "inset-y-") {
+        head = substr(base, 0, 7)
+        rest = substr(base, 8, len(base))
+    }
+    if has(c.ins, head) {
+        v, vok := tw_inset_val(rest, true, c)
+        if vok { d = tw_props_decl(c.ins[head], v)  ok = true } else { ok = false }
+        return
+    }
+    if has_prefix(base, "translate-x-") { d, ok = tw_translate("x", substr(base, 12, len(base)), true, c)  return }
+    if has_prefix(base, "translate-y-") { d, ok = tw_translate("y", substr(base, 12, len(base)), true, c)  return }
+    if has_prefix(base, "space-x-") { d, sfx, ok = tw_space_between("x", substr(base, 8, len(base)), true, c)  return }
+    if has_prefix(base, "space-y-") { d, sfx, ok = tw_space_between("y", substr(base, 8, len(base)), true, c)  return }
+    ok = false
+}
+
+// resolve a base utility (no variants) to declarations + a selector suffix
+func tw_decls(base, c) (d, sfx, ok) {
+    ok = true
+    if has(c.st, base) { d = c.st[base]  return }
+    if has(c.sg, base) {
+        d = c.sg[base]
+        if has(c.sfx, base) { sfx = c.sfx[base] }
+        return
+    }
+    if has_prefix(base, "-") {
+        d, sfx, ok = tw_neg(substr(base, 1, len(base)), c)
+        return
+    }
+    if index(base, "-[") > 0 && has_suffix(base, "]") {
+        d, ok = tw_arbitrary(base, c)
+        return
+    }
     dash := index(base, "-")
     if dash < 0 { ok = false  return }
     head := substr(base, 0, dash)
     rest := substr(base, dash + 1, len(base))
     // padding / margin
-    if has(pm, head) {
-        if charat(head, 0) == "m" && rest == "auto" { d = tw_props_decl(pm[head], "auto")  return }
-        if has(sp, rest) { d = tw_props_decl(pm[head], sp[rest])  return }
+    if has(c.pm, head) {
+        if charat(head, 0) == "m" && rest == "auto" { d = tw_props_decl(c.pm[head], "auto")  return }
+        if has(c.sp, rest) { d = tw_props_decl(c.pm[head], c.sp[rest])  return }
         ok = false
         return
     }
     // width / height
-    if head == "w" { d, ok = tw_size("width", rest, sp, fr)  return }
-    if head == "h" { d, ok = tw_size("height", rest, sp, fr)  return }
+    if head == "w" { d, ok = tw_size("width", rest, c)  return }
+    if head == "h" { d, ok = tw_size("height", rest, c)  return }
+    // max-h over the spacing scale (statics cover the named values)
+    if has_prefix(base, "max-h-") {
+        t := substr(base, 6, len(base))
+        if has(c.sp, t) { d = "max-height: " + c.sp[t]  return }
+        ok = false
+        return
+    }
+    // inset family
+    if has_prefix(base, "inset-x-") || has_prefix(base, "inset-y-") {
+        head = substr(base, 0, 7)
+        rest = substr(base, 8, len(base))
+    }
+    if has(c.ins, head) {
+        v, vok := tw_inset_val(rest, false, c)
+        if vok { d = tw_props_decl(c.ins[head], v) } else { ok = false }
+        return
+    }
+    // translate / space-between
+    if has_prefix(base, "translate-x-") { d, ok = tw_translate("x", substr(base, 12, len(base)), false, c)  return }
+    if has_prefix(base, "translate-y-") { d, ok = tw_translate("y", substr(base, 12, len(base)), false, c)  return }
+    if has_prefix(base, "space-x-") { d, sfx, ok = tw_space_between("x", substr(base, 8, len(base)), false, c)  return }
+    if has_prefix(base, "space-y-") { d, sfx, ok = tw_space_between("y", substr(base, 8, len(base)), false, c)  return }
     // gap
     if head == "gap" {
         if has_prefix(rest, "x-") {
             t := substr(rest, 2, len(rest))
-            if has(sp, t) { d = "-moz-column-gap: " + sp[t] + ";\n  column-gap: " + sp[t]  return }
+            if has(c.sp, t) { d = "-moz-column-gap: " + c.sp[t] + ";\n  column-gap: " + c.sp[t]  return }
             ok = false
             return
         }
         if has_prefix(rest, "y-") {
             t := substr(rest, 2, len(rest))
-            if has(sp, t) { d = "row-gap: " + sp[t]  return }
+            if has(c.sp, t) { d = "row-gap: " + c.sp[t]  return }
             ok = false
             return
         }
-        if has(sp, rest) { d = "gap: " + sp[rest]  return }
+        if has(c.sp, rest) { d = "gap: " + c.sp[rest]  return }
         ok = false
         return
     }
@@ -337,9 +588,84 @@ func tw_decls(base, pal, sp, st, fr, pm, bs) (d, ok) {
         ok = false
         return
     }
+    // ring / ring-offset colors (widths are in the generated statics)
+    if has_prefix(base, "ring-offset-") {
+        name := substr(base, 12, len(base))
+        if has(c.hex, name) { d = "--tw-ring-offset-color: " + c.hex[name]  return }
+        ok = false
+        return
+    }
+    if head == "ring" {
+        if has(c.pal, rest) {
+            d = "--tw-ring-opacity: 1;\n  --tw-ring-color: rgb(" + c.pal[rest] + " / var(--tw-ring-opacity, 1))"
+            return
+        }
+        slash := index(rest, "/")
+        if slash >= 0 {
+            cname := substr(rest, 0, slash)
+            a, aok := tw_frac100(substr(rest, slash + 1, len(rest)))
+            if aok && has(c.pal, cname) {
+                d = "--tw-ring-color: rgb(" + c.pal[cname] + " / " + a + ")"
+                return
+            }
+        }
+        ok = false
+        return
+    }
+    if head == "outline" {
+        if has(c.hex, rest) { d = "outline-color: " + c.hex[rest]  return }
+        ok = false
+        return
+    }
+    if head == "divide" {
+        if has(c.pal, rest) {
+            sfx = tw_space_suffix()
+            d = "--tw-divide-opacity: 1;\n  border-color: rgb(" + c.pal[rest] + " / var(--tw-divide-opacity, 1))"
+            return
+        }
+        slash := index(rest, "/")
+        if slash >= 0 {
+            cname := substr(rest, 0, slash)
+            a, aok := tw_frac100(substr(rest, slash + 1, len(rest)))
+            if aok && has(c.pal, cname) {
+                sfx = tw_space_suffix()
+                d = "border-color: rgb(" + c.pal[cname] + " / " + a + ")"
+                return
+            }
+        }
+        ok = false
+        return
+    }
+    if head == "decoration" {
+        if has(c.hex, rest) { d = "text-decoration-color: " + c.hex[rest]  return }
+        ok = false
+        return
+    }
+    // gradient stops (named specials are in the generated statics)
+    if head == "from" {
+        if has(c.hex, rest) {
+            d = "--tw-gradient-from: " + c.hex[rest] + " var(--tw-gradient-from-position);\n  --tw-gradient-to: rgb(" + c.pal[rest] + " / 0) var(--tw-gradient-to-position);\n  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to)"
+            return
+        }
+        ok = false
+        return
+    }
+    if head == "via" {
+        if has(c.hex, rest) {
+            d = "--tw-gradient-to: rgb(" + c.pal[rest] + " / 0)  var(--tw-gradient-to-position);\n  --tw-gradient-stops: var(--tw-gradient-from), " + c.hex[rest] + " var(--tw-gradient-via-position), var(--tw-gradient-to)"
+            return
+        }
+        ok = false
+        return
+    }
+    if head == "to" {
+        if has(c.hex, rest) { d = "--tw-gradient-to: " + c.hex[rest] + " var(--tw-gradient-to-position)"  return }
+        ok = false
+        return
+    }
     // colors + border widths
-    if head == "bg" { d, ok = tw_color("bg", "background-color", rest, pal)  return }
-    if head == "text" { d, ok = tw_color("text", "color", rest, pal)  return }
+    if head == "bg" { d, ok = tw_color("bg", "background-color", rest, c)  return }
+    if head == "text" { d, ok = tw_color("text", "color", rest, c)  return }
     if head == "border" {
         side := rest
         val := ""
@@ -348,46 +674,53 @@ func tw_decls(base, pal, sp, st, fr, pm, bs) (d, ok) {
             side = substr(rest, 0, d2)
             val = substr(rest, d2 + 1, len(rest))
         }
-        if has(bs, side) {
+        if has(c.bs, side) {
             w := "1px"
             wok := true
             if len(val) > 0 {
                 if val == "0" || val == "2" || val == "4" || val == "8" { w = val + "px" } else { wok = false }
             }
-            if wok { d = tw_props_decl(bs[side], w)  return }
+            if wok { d = tw_props_decl(c.bs[side], w)  return }
         }
-        d, ok = tw_color("border", "border-color", rest, pal)
+        d, ok = tw_color("border", "border-color", rest, c)
         return
     }
     ok = false
 }
 
 // escape a class name into a CSS selector fragment.
-// A selector can't start with a digit: CSS-hex-escape it (e.g. "2xl:x" -> "\32xl\:x",
-// with a trailing space if the next char is itself a hex digit).
+// Alphanumerics, "-" and "_" pass through; a LEADING digit is CSS-hex-escaped
+// ("2xl:x" -> "\32xl\:x"); "," is hex-escaped ("\2c "); everything else gets a
+// backslash.
 func tw_escape(s) (e) {
     e = ""
+    alnum := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
     i := 0
     while i < len(s) {
         c := charat(s, i)
         if i == 0 && index("0123456789", c) >= 0 {
             e = "\\3" + c
             if len(s) > 1 && index("0123456789abcdefABCDEF", charat(s, 1)) >= 0 { e = e + " " }
-        } else {
-            if c == ":" || c == "." || c == "/" { e = e + "\\" }
-            e = e + c
         }
+        else if index(alnum, c) >= 0 { e = e + c }
+        else if c == "," { e = e + "\\2c " }
+        else { e = e + "\\" + c }
         i = i + 1
     }
 }
 
-// resolve one full class (with variants) into a CSS rule
-func tw_rule(cls, pal, sp, st, fr, pm, bs) (css, ok) {
+// resolve one full class (with variants) into a CSS rule.
+// kf_done tracks which @keyframes blocks were already emitted per media
+// context (Tailwind nests keyframes inside the variant's @media block).
+func tw_rule(cls, c, kf_done) (css, ok) {
     parts := split(cls, ":")
     base := parts[len(parts) - 1]
-    d, dok := tw_decls(base, pal, sp, st, fr, pm, bs)
+    // arbitrary values may contain ":" (e.g. url()) — not supported; but a
+    // "[" before the last ":" means the split cut inside brackets: rejoin.
+    d, sfx, dok := tw_decls(base, c)
     if dok == false { ok = false  return }
     sel := "." + tw_escape(cls)
+    prefix := ""
     visited := false
     medias := []string{}
     i := 0
@@ -397,6 +730,12 @@ func tw_rule(cls, pal, sp, st, fr, pm, bs) (css, ok) {
             sel = sel + ":" + v
             if v == "visited" { visited = true }
         }
+        else if v == "group-hover" { prefix = ".group:hover " }
+        else if v == "group-focus" { prefix = ".group:focus " }
+        else if v == "peer-hover" { prefix = ".peer:hover ~ " }
+        else if v == "peer-focus" { prefix = ".peer:focus ~ " }
+        else if v == "peer-checked" { prefix = ".peer:checked ~ " }
+        else if v == "peer-disabled" { prefix = ".peer:disabled ~ " }
         else if v == "sm" { medias = append(medias, "(min-width: 640px)") }
         else if v == "md" { medias = append(medias, "(min-width: 768px)") }
         else if v == "lg" { medias = append(medias, "(min-width: 1024px)") }
@@ -413,7 +752,15 @@ func tw_rule(cls, pal, sp, st, fr, pm, bs) (css, ok) {
             d = replace(d, "/ var(--tw-" + vn + "-opacity, 1))", ")")
         }
     }
-    css = sel + " {\n  " + d + "\n}"
+    css = prefix + sel + sfx + " {\n  " + d + "\n}"
+    if has_prefix(base, "animate-") {
+        name := substr(base, 8, len(base))
+        key := name + "|" + join(medias, "|")
+        if has(c.kf, name) && has(kf_done, key) == false {
+            kf_done[key] = true
+            css = c.kf[name] + "\n" + css
+        }
+    }
     j := len(medias) - 1
     while j >= 0 {
         css = "@media " + medias[j] + " {\n" + css + "\n}"
@@ -427,23 +774,24 @@ func tw_rule(cls, pal, sp, st, fr, pm, bs) (css, ok) {
 // comment. warn=false (file-scan mode): non-resolving tokens are just code, skip
 // them silently — Tailwind's own JIT semantics.
 func tw_css_mode(classes, warn) (out) {
-    pal := tw_palette()
-    sp := tw_spacing()
-    st := tw_static()
-    fr := tw_fractions()
-    pm := tw_pm_heads()
-    bs := tw_border_sides()
+    c := tw_ctx()
+    kf_done := make(map[string]bool)
     seen := make(map[string]bool)
-    unknown := ""
-    out = ""
+    unknown := []string{}
+    rules := []string{}
     for _, cls := range classes {
         if len(cls) == 0 { continue }
         if has(seen, cls) { continue }
         seen[cls] = true
-        rule, ok := tw_rule(cls, pal, sp, st, fr, pm, bs)
-        if ok { out = out + rule + "\n" } else { unknown = unknown + " " + cls }
+        rule, ok := tw_rule(cls, c, kf_done)
+        if ok == false {
+            unknown = append(unknown, cls)
+            continue
+        }
+        rules = append(rules, rule + "\n")
     }
-    if warn && len(unknown) > 0 { out = "/* tw-unknown:" + unknown + " */\n" + out }
+    out = join(rules, "")
+    if warn && len(unknown) > 0 { out = "/* tw-unknown: " + join(unknown, " ") + " */\n" + out }
 }
 
 func tw_css(classes) (out) { out = tw_css_mode(classes, true) }
