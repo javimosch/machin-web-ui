@@ -1,0 +1,444 @@
+// tw.src — a Tailwind-compatible CSS engine in pure MFL (spike scope).
+// Given a list of class names, emits the CSS rules Tailwind v3.4 would emit
+// for them (differential-tested against the tailwindcss standalone binary).
+//
+// Spike families: display, padding/margin, width/height, bg/text/border color,
+// border width, rounded, font-size/weight, flex, grid-cols/col-span, gap,
+// text-align, tracking, leading, shadow.
+// Variants: hover/focus/active/disabled/focus-within/focus-visible/visited,
+// dark (media strategy), responsive sm/md/lg/xl/2xl. Variants stack.
+
+// --- spacing scale (v3 default theme) ---
+func tw_spacing() (m) {
+    m = make(map[string]string)
+    m["0"] = "0px"
+    m["px"] = "1px"
+    m["0.5"] = "0.125rem"
+    m["1"] = "0.25rem"
+    m["1.5"] = "0.375rem"
+    m["2"] = "0.5rem"
+    m["2.5"] = "0.625rem"
+    m["3"] = "0.75rem"
+    m["3.5"] = "0.875rem"
+    m["4"] = "1rem"
+    m["5"] = "1.25rem"
+    m["6"] = "1.5rem"
+    m["7"] = "1.75rem"
+    m["8"] = "2rem"
+    m["9"] = "2.25rem"
+    m["10"] = "2.5rem"
+    m["11"] = "2.75rem"
+    m["12"] = "3rem"
+    m["14"] = "3.5rem"
+    m["16"] = "4rem"
+    m["20"] = "5rem"
+    m["24"] = "6rem"
+    m["28"] = "7rem"
+    m["32"] = "8rem"
+    m["36"] = "9rem"
+    m["40"] = "10rem"
+    m["44"] = "11rem"
+    m["48"] = "12rem"
+    m["52"] = "13rem"
+    m["56"] = "14rem"
+    m["60"] = "15rem"
+    m["64"] = "16rem"
+    m["72"] = "18rem"
+    m["80"] = "20rem"
+    m["96"] = "24rem"
+}
+
+// --- fraction scale for w-/h- ---
+func tw_fractions() (m) {
+    m = make(map[string]string)
+    m["1/2"] = "50%"
+    m["1/3"] = "33.333333%"
+    m["2/3"] = "66.666667%"
+    m["1/4"] = "25%"
+    m["2/4"] = "50%"
+    m["3/4"] = "75%"
+    m["1/5"] = "20%"
+    m["2/5"] = "40%"
+    m["3/5"] = "60%"
+    m["4/5"] = "80%"
+    m["1/6"] = "16.666667%"
+    m["2/6"] = "33.333333%"
+    m["3/6"] = "50%"
+    m["4/6"] = "66.666667%"
+    m["5/6"] = "83.333333%"
+    m["1/12"] = "8.333333%"
+    m["2/12"] = "16.666667%"
+    m["3/12"] = "25%"
+    m["4/12"] = "33.333333%"
+    m["5/12"] = "41.666667%"
+    m["6/12"] = "50%"
+    m["7/12"] = "58.333333%"
+    m["8/12"] = "66.666667%"
+    m["9/12"] = "75%"
+    m["10/12"] = "83.333333%"
+    m["11/12"] = "91.666667%"
+}
+
+func tw_shadow_decl(plain, colored) (d) {
+    d = "--tw-shadow: " + plain + ";\n  --tw-shadow-colored: " + colored + ";\n  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)"
+}
+
+// --- non-parametric utilities: full class name -> declarations ---
+func tw_static() (m) {
+    m = make(map[string]string)
+    // display
+    m["block"] = "display: block"
+    m["inline-block"] = "display: inline-block"
+    m["inline"] = "display: inline"
+    m["flex"] = "display: flex"
+    m["inline-flex"] = "display: inline-flex"
+    m["grid"] = "display: grid"
+    m["inline-grid"] = "display: inline-grid"
+    m["hidden"] = "display: none"
+    // flex direction / wrap / grow-shrink shorthands
+    m["flex-row"] = "flex-direction: row"
+    m["flex-row-reverse"] = "flex-direction: row-reverse"
+    m["flex-col"] = "flex-direction: column"
+    m["flex-col-reverse"] = "flex-direction: column-reverse"
+    m["flex-wrap"] = "flex-wrap: wrap"
+    m["flex-wrap-reverse"] = "flex-wrap: wrap-reverse"
+    m["flex-nowrap"] = "flex-wrap: nowrap"
+    m["flex-1"] = "flex: 1 1 0%"
+    m["flex-auto"] = "flex: 1 1 auto"
+    m["flex-initial"] = "flex: 0 1 auto"
+    m["flex-none"] = "flex: none"
+    m["grow"] = "flex-grow: 1"
+    m["grow-0"] = "flex-grow: 0"
+    m["shrink"] = "flex-shrink: 1"
+    m["shrink-0"] = "flex-shrink: 0"
+    // align / justify
+    m["items-start"] = "align-items: flex-start"
+    m["items-end"] = "align-items: flex-end"
+    m["items-center"] = "align-items: center"
+    m["items-baseline"] = "align-items: baseline"
+    m["items-stretch"] = "align-items: stretch"
+    m["justify-start"] = "justify-content: flex-start"
+    m["justify-end"] = "justify-content: flex-end"
+    m["justify-center"] = "justify-content: center"
+    m["justify-between"] = "justify-content: space-between"
+    m["justify-around"] = "justify-content: space-around"
+    m["justify-evenly"] = "justify-content: space-evenly"
+    // text align
+    m["text-left"] = "text-align: left"
+    m["text-center"] = "text-align: center"
+    m["text-right"] = "text-align: right"
+    m["text-justify"] = "text-align: justify"
+    // font size (font-size + line-height pairs)
+    m["text-xs"] = "font-size: 0.75rem;\n  line-height: 1rem"
+    m["text-sm"] = "font-size: 0.875rem;\n  line-height: 1.25rem"
+    m["text-base"] = "font-size: 1rem;\n  line-height: 1.5rem"
+    m["text-lg"] = "font-size: 1.125rem;\n  line-height: 1.75rem"
+    m["text-xl"] = "font-size: 1.25rem;\n  line-height: 1.75rem"
+    m["text-2xl"] = "font-size: 1.5rem;\n  line-height: 2rem"
+    m["text-3xl"] = "font-size: 1.875rem;\n  line-height: 2.25rem"
+    m["text-4xl"] = "font-size: 2.25rem;\n  line-height: 2.5rem"
+    m["text-5xl"] = "font-size: 3rem;\n  line-height: 1"
+    m["text-6xl"] = "font-size: 3.75rem;\n  line-height: 1"
+    m["text-7xl"] = "font-size: 4.5rem;\n  line-height: 1"
+    m["text-8xl"] = "font-size: 6rem;\n  line-height: 1"
+    m["text-9xl"] = "font-size: 8rem;\n  line-height: 1"
+    // font weight
+    m["font-thin"] = "font-weight: 100"
+    m["font-extralight"] = "font-weight: 200"
+    m["font-light"] = "font-weight: 300"
+    m["font-normal"] = "font-weight: 400"
+    m["font-medium"] = "font-weight: 500"
+    m["font-semibold"] = "font-weight: 600"
+    m["font-bold"] = "font-weight: 700"
+    m["font-extrabold"] = "font-weight: 800"
+    m["font-black"] = "font-weight: 900"
+    m["italic"] = "font-style: italic"
+    m["not-italic"] = "font-style: normal"
+    // letter spacing
+    m["tracking-tighter"] = "letter-spacing: -0.05em"
+    m["tracking-tight"] = "letter-spacing: -0.025em"
+    m["tracking-normal"] = "letter-spacing: 0em"
+    m["tracking-wide"] = "letter-spacing: 0.025em"
+    m["tracking-wider"] = "letter-spacing: 0.05em"
+    m["tracking-widest"] = "letter-spacing: 0.1em"
+    // line height
+    m["leading-none"] = "line-height: 1"
+    m["leading-tight"] = "line-height: 1.25"
+    m["leading-snug"] = "line-height: 1.375"
+    m["leading-normal"] = "line-height: 1.5"
+    m["leading-relaxed"] = "line-height: 1.625"
+    m["leading-loose"] = "line-height: 2"
+    m["leading-3"] = "line-height: .75rem"
+    m["leading-4"] = "line-height: 1rem"
+    m["leading-5"] = "line-height: 1.25rem"
+    m["leading-6"] = "line-height: 1.5rem"
+    m["leading-7"] = "line-height: 1.75rem"
+    m["leading-8"] = "line-height: 2rem"
+    m["leading-9"] = "line-height: 2.25rem"
+    m["leading-10"] = "line-height: 2.5rem"
+    // border radius
+    m["rounded-none"] = "border-radius: 0px"
+    m["rounded-sm"] = "border-radius: 0.125rem"
+    m["rounded"] = "border-radius: 0.25rem"
+    m["rounded-md"] = "border-radius: 0.375rem"
+    m["rounded-lg"] = "border-radius: 0.5rem"
+    m["rounded-xl"] = "border-radius: 0.75rem"
+    m["rounded-2xl"] = "border-radius: 1rem"
+    m["rounded-3xl"] = "border-radius: 1.5rem"
+    m["rounded-full"] = "border-radius: 9999px"
+    // border width (whole-element)
+    m["border"] = "border-width: 1px"
+    m["border-0"] = "border-width: 0px"
+    m["border-2"] = "border-width: 2px"
+    m["border-4"] = "border-width: 4px"
+    m["border-8"] = "border-width: 8px"
+    // grid
+    m["grid-cols-none"] = "grid-template-columns: none"
+    m["col-span-full"] = "grid-column: 1 / -1"
+    m["col-auto"] = "grid-column: auto"
+    // shadows
+    m["shadow-sm"] = tw_shadow_decl("0 1px 2px 0 rgb(0 0 0 / 0.05)", "0 1px 2px 0 var(--tw-shadow-color)")
+    m["shadow"] = tw_shadow_decl("0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)", "0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color)")
+    m["shadow-md"] = tw_shadow_decl("0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)", "0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color)")
+    m["shadow-lg"] = tw_shadow_decl("0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)", "0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color)")
+    m["shadow-xl"] = tw_shadow_decl("0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)", "0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color)")
+    m["shadow-2xl"] = tw_shadow_decl("0 25px 50px -12px rgb(0 0 0 / 0.25)", "0 25px 50px -12px var(--tw-shadow-color)")
+    m["shadow-inner"] = tw_shadow_decl("inset 0 2px 4px 0 rgb(0 0 0 / 0.05)", "inset 0 2px 4px 0 var(--tw-shadow-color)")
+    m["shadow-none"] = tw_shadow_decl("0 0 #0000", "0 0 #0000")
+}
+
+// padding/margin head -> comma-joined properties
+func tw_pm_heads() (m) {
+    m = make(map[string]string)
+    m["p"] = "padding"
+    m["px"] = "padding-left,padding-right"
+    m["py"] = "padding-top,padding-bottom"
+    m["pt"] = "padding-top"
+    m["pr"] = "padding-right"
+    m["pb"] = "padding-bottom"
+    m["pl"] = "padding-left"
+    m["m"] = "margin"
+    m["mx"] = "margin-left,margin-right"
+    m["my"] = "margin-top,margin-bottom"
+    m["mt"] = "margin-top"
+    m["mr"] = "margin-right"
+    m["mb"] = "margin-bottom"
+    m["ml"] = "margin-left"
+}
+
+// border side letter -> comma-joined properties
+func tw_border_sides() (m) {
+    m = make(map[string]string)
+    m["x"] = "border-left-width,border-right-width"
+    m["y"] = "border-top-width,border-bottom-width"
+    m["t"] = "border-top-width"
+    m["r"] = "border-right-width"
+    m["b"] = "border-bottom-width"
+    m["l"] = "border-left-width"
+}
+
+func tw_is_digits(s) (ok) {
+    ok = len(s) > 0
+    i := 0
+    while i < len(s) {
+        if index("0123456789", charat(s, i)) < 0 { ok = false }
+        i = i + 1
+    }
+}
+
+// join "a,b" heads with a value into declarations
+func tw_props_decl(props, val) (d) {
+    parts := split(props, ",")
+    outs := []string{}
+    for _, p := range parts { outs = append(outs, p + ": " + val) }
+    d = join(outs, ";\n  ")
+}
+
+// color utilities: bg-*, text-*, border-* -> declarations
+func tw_color(varname, prop, name, pal) (d, ok) {
+    ok = true
+    if name == "transparent" { d = prop + ": transparent"  return }
+    if name == "inherit" { d = prop + ": inherit"  return }
+    if name == "current" { d = prop + ": currentColor"  return }
+    if has(pal, name) {
+        d = "--tw-" + varname + "-opacity: 1;\n  " + prop + ": rgb(" + pal[name] + " / var(--tw-" + varname + "-opacity, 1))"
+        return
+    }
+    ok = false
+}
+
+// w-*/h-* sizing
+func tw_size(prop, tok, sp, fr) (d, ok) {
+    ok = true
+    v := ""
+    if tok == "auto" { v = "auto" }
+    else if tok == "full" { v = "100%" }
+    else if tok == "screen" {
+        v = "100vh"
+        if prop == "width" { v = "100vw" }
+    }
+    else if tok == "min" || tok == "max" || tok == "fit" {
+        v = tok + "-content"
+        d = prop + ": -moz-" + v + ";\n  " + prop + ": " + v
+        return
+    }
+    else if has(sp, tok) { v = sp[tok] }
+    else if has(fr, tok) { v = fr[tok] }
+    else { ok = false  return }
+    d = prop + ": " + v
+}
+
+// resolve a base utility (no variants) to its declarations
+func tw_decls(base, pal, sp, st, fr, pm, bs) (d, ok) {
+    ok = true
+    if has(st, base) { d = st[base]  return }
+    dash := index(base, "-")
+    if dash < 0 { ok = false  return }
+    head := substr(base, 0, dash)
+    rest := substr(base, dash + 1, len(base))
+    // padding / margin
+    if has(pm, head) {
+        if charat(head, 0) == "m" && rest == "auto" { d = tw_props_decl(pm[head], "auto")  return }
+        if has(sp, rest) { d = tw_props_decl(pm[head], sp[rest])  return }
+        ok = false
+        return
+    }
+    // width / height
+    if head == "w" { d, ok = tw_size("width", rest, sp, fr)  return }
+    if head == "h" { d, ok = tw_size("height", rest, sp, fr)  return }
+    // gap
+    if head == "gap" {
+        if has_prefix(rest, "x-") {
+            t := substr(rest, 2, len(rest))
+            if has(sp, t) { d = "-moz-column-gap: " + sp[t] + ";\n  column-gap: " + sp[t]  return }
+            ok = false
+            return
+        }
+        if has_prefix(rest, "y-") {
+            t := substr(rest, 2, len(rest))
+            if has(sp, t) { d = "row-gap: " + sp[t]  return }
+            ok = false
+            return
+        }
+        if has(sp, rest) { d = "gap: " + sp[rest]  return }
+        ok = false
+        return
+    }
+    // grid-cols-N / col-span-N
+    if has_prefix(base, "grid-cols-") {
+        n := substr(base, 10, len(base))
+        if tw_is_digits(n) { d = "grid-template-columns: repeat(" + n + ", minmax(0, 1fr))"  return }
+        ok = false
+        return
+    }
+    if has_prefix(base, "col-span-") {
+        n := substr(base, 9, len(base))
+        if tw_is_digits(n) { d = "grid-column: span " + n + " / span " + n  return }
+        ok = false
+        return
+    }
+    // colors + border widths
+    if head == "bg" { d, ok = tw_color("bg", "background-color", rest, pal)  return }
+    if head == "text" { d, ok = tw_color("text", "color", rest, pal)  return }
+    if head == "border" {
+        side := rest
+        val := ""
+        d2 := index(rest, "-")
+        if d2 >= 0 {
+            side = substr(rest, 0, d2)
+            val = substr(rest, d2 + 1, len(rest))
+        }
+        if has(bs, side) {
+            w := "1px"
+            wok := true
+            if len(val) > 0 {
+                if val == "0" || val == "2" || val == "4" || val == "8" { w = val + "px" } else { wok = false }
+            }
+            if wok { d = tw_props_decl(bs[side], w)  return }
+        }
+        d, ok = tw_color("border", "border-color", rest, pal)
+        return
+    }
+    ok = false
+}
+
+// escape a class name into a CSS selector fragment.
+// A selector can't start with a digit: CSS-hex-escape it (e.g. "2xl:x" -> "\32xl\:x",
+// with a trailing space if the next char is itself a hex digit).
+func tw_escape(s) (e) {
+    e = ""
+    i := 0
+    while i < len(s) {
+        c := charat(s, i)
+        if i == 0 && index("0123456789", c) >= 0 {
+            e = "\\3" + c
+            if len(s) > 1 && index("0123456789abcdefABCDEF", charat(s, 1)) >= 0 { e = e + " " }
+        } else {
+            if c == ":" || c == "." || c == "/" { e = e + "\\" }
+            e = e + c
+        }
+        i = i + 1
+    }
+}
+
+// resolve one full class (with variants) into a CSS rule
+func tw_rule(cls, pal, sp, st, fr, pm, bs) (css, ok) {
+    parts := split(cls, ":")
+    base := parts[len(parts) - 1]
+    d, dok := tw_decls(base, pal, sp, st, fr, pm, bs)
+    if dok == false { ok = false  return }
+    sel := "." + tw_escape(cls)
+    visited := false
+    medias := []string{}
+    i := 0
+    while i < len(parts) - 1 {
+        v := parts[i]
+        if v == "hover" || v == "focus" || v == "active" || v == "disabled" || v == "visited" || v == "focus-within" || v == "focus-visible" {
+            sel = sel + ":" + v
+            if v == "visited" { visited = true }
+        }
+        else if v == "sm" { medias = append(medias, "(min-width: 640px)") }
+        else if v == "md" { medias = append(medias, "(min-width: 768px)") }
+        else if v == "lg" { medias = append(medias, "(min-width: 1024px)") }
+        else if v == "xl" { medias = append(medias, "(min-width: 1280px)") }
+        else if v == "2xl" { medias = append(medias, "(min-width: 1536px)") }
+        else if v == "dark" { medias = append(medias, "(prefers-color-scheme: dark)") }
+        else { ok = false  return }
+        i = i + 1
+    }
+    // :visited allows no alpha channel: Tailwind strips the opacity variable there
+    if visited {
+        for _, vn := range []string{"bg", "text", "border"} {
+            d = replace(d, "--tw-" + vn + "-opacity: 1;\n  ", "")
+            d = replace(d, "/ var(--tw-" + vn + "-opacity, 1))", ")")
+        }
+    }
+    css = sel + " {\n  " + d + "\n}"
+    j := len(medias) - 1
+    while j >= 0 {
+        css = "@media " + medias[j] + " {\n" + css + "\n}"
+        j = j - 1
+    }
+    ok = true
+}
+
+// entry point: class list -> stylesheet (+ a comment listing unknown classes)
+func tw_css(classes) (out) {
+    pal := tw_palette()
+    sp := tw_spacing()
+    st := tw_static()
+    fr := tw_fractions()
+    pm := tw_pm_heads()
+    bs := tw_border_sides()
+    seen := make(map[string]bool)
+    unknown := ""
+    out = ""
+    for _, cls := range classes {
+        if len(cls) == 0 { continue }
+        if has(seen, cls) { continue }
+        seen[cls] = true
+        rule, ok := tw_rule(cls, pal, sp, st, fr, pm, bs)
+        if ok { out = out + rule + "\n" } else { unknown = unknown + " " + cls }
+    }
+    if len(unknown) > 0 { out = "/* tw-unknown:" + unknown + " */\n" + out }
+}
