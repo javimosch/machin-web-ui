@@ -1,0 +1,6 @@
+// spinner.src — quiet loading indicator: a spinning hairline arc (pure CSS,
+// uses the engine's animate-spin @keyframes).
+
+func ui_spinner() (h) {
+    h = "<span class=\"inline-block h-4 w-4 animate-spin rounded-full border-2 border-stone-300 border-t-stone-900\"></span>"
+}

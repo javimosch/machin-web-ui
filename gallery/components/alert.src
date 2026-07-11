@@ -1,0 +1,16 @@
+// alert.src — inline banner with a colored left accent. Kinds: "info",
+// "success", "warning", "error". Title may be "" for a plain message.
+
+func ui_alert_classes(kind) (c) {
+    c = "rounded-md border border-stone-200 border-l-4 bg-white px-4 py-3 text-sm"
+    if kind == "info" { c = c + " border-l-sky-600" }
+    if kind == "success" { c = c + " border-l-green-600" }
+    if kind == "warning" { c = c + " border-l-amber-500" }
+    if kind == "error" { c = c + " border-l-red-600" }
+}
+
+func ui_alert(kind, title, body) (h) {
+    t := ""
+    if len(title) > 0 { t = "<p class=\"font-medium text-stone-900\">" + ui_esc(title) + "</p>" }
+    h = "<div class=\"" + ui_alert_classes(kind) + "\">" + t + "<p class=\"text-stone-500\">" + ui_esc(body) + "</p></div>"
+}

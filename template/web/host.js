@@ -19,7 +19,7 @@ const env = {
 // no-op WASI shim (imported but never called)
 const wasi = { fd_write: () => 0, fd_seek: () => 0, fd_close: () => 0, fd_fdstat_get: () => 0 };
 
-const { instance } = await WebAssembly.instantiateStreaming(fetch('/app.wasm'), { env, wasi_snapshot_preview1: wasi });
+const { instance } = await WebAssembly.instantiateStreaming(fetch('app.wasm'), { env, wasi_snapshot_preview1: wasi });
 mem = instance.exports.memory;
 instance.exports._initialize?.();
 instance.exports.start();

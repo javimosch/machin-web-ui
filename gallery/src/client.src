@@ -10,14 +10,23 @@ extern "env" {
 
 var count = 0                   // signal id
 var tab_sig = 0                 // signal id: active tab index
+var pg = 0                      // signal id: pagination demo
 
 export func start() {
     count = signal(0)
     tab_sig = signal(0)
+    pg = signal(2)
     hydrate(app_view(
         slot("count", func() { return str(get(count)) }),
-        slot("panel", func() { return tab_panel_text(get(tab_sig)) })))
+        slot("panel", func() { return tab_panel_text(get(tab_sig)) }),
+        slot("pg", func() { return str(get(pg)) })))
     bind("toast_msg", func() { get(count)  return "count is " + str(get(count)) })
+}
+
+// data-action="page" (pagination buttons)
+export func page(arg) {
+    n := int(arg)
+    if n >= 1 && n <= 5 { set(pg, n) }
 }
 
 export func bump(arg) { set(count, get(count) + 1) }

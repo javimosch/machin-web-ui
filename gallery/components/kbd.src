@@ -1,0 +1,17 @@
+// kbd.src — keystroke chip: a physical-key look for shortcuts and commands.
+
+func ui_kbd(keys) (h) {
+    h = "<kbd class=\"rounded border border-stone-200 bg-stone-100 px-1.5 py-0.5 text-xs text-stone-900\">" + ui_esc(keys) + "</kbd>"
+}
+
+// a sequence like ["ctrl", "K"] with + separators
+func ui_kbd_combo(keys) (h) {
+    h = "<span class=\"inline-flex items-center gap-1\">"
+    i := 0
+    for _, k := range keys {
+        if i > 0 { h = h + "<span class=\"text-xs text-stone-400\">+</span>" }
+        h = h + ui_kbd(k)
+        i = i + 1
+    }
+    h = h + "</span>"
+}

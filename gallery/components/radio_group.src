@@ -1,0 +1,18 @@
+// radio_group.src — custom radios, no JS: sr-only native inputs drive styled
+// circles via peer-checked (the "dot" is a thick inked border on a rounded span).
+
+func ui_radio(name, label, checked) (h) {
+    ck := ""
+    if checked { ck = " checked" }
+    h = "<label class=\"inline-flex cursor-pointer items-center gap-2.5\">"
+    h = h + "<input type=\"radio\" name=\"" + name + "\" class=\"peer sr-only\"" + ck + ">"
+    h = h + "<span class=\"h-4 w-4 rounded-full border border-stone-300 bg-white transition peer-checked:border-4 peer-checked:border-stone-900\"></span>"
+    h = h + "<span class=\"text-sm text-stone-900\">" + ui_esc(label) + "</span>"
+    h = h + "</label>"
+}
+
+func ui_radio_group(name, options, selected) (h) {
+    h = "<div class=\"flex flex-col gap-2\">"
+    for _, o := range options { h = h + ui_radio(name, o, o == selected) }
+    h = h + "</div>"
+}

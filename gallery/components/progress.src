@@ -1,0 +1,11 @@
+// progress.src — flat progress bar. `pct` is 0..100 (clamped); the fill width
+// is an inline style so any value works without a stylesheet rebuild.
+
+func ui_progress(pct) (h) {
+    p := pct
+    if p < 0 { p = 0 }
+    if p > 100 { p = 100 }
+    h = "<div class=\"h-2 w-full overflow-hidden rounded-full bg-stone-200\">"
+    h = h + "<div class=\"h-2 rounded-full bg-stone-900 transition\" style=\"width:" + str(p) + "%\"></div>"
+    h = h + "</div>"
+}

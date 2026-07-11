@@ -36,7 +36,7 @@ def static_gen():
     c += [f"select-{v}" for v in "none text all auto".split()]
     c += "pointer-events-none pointer-events-auto".split()
     c += "resize-none resize-y resize-x resize".split()
-    c += "scroll-auto scroll-smooth appearance-none".split()
+    c += "scroll-auto scroll-smooth appearance-none sr-only not-sr-only".split()
     c += ["outline-none", "outline", "outline-dashed", "outline-dotted", "outline-double"]
     c += [f"outline-{n}" for n in "0 1 2 4 8".split()]
     c += [f"outline-offset-{n}" for n in "0 1 2 4 8".split()]

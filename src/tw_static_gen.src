@@ -175,6 +175,8 @@ func tw_static_gen() (m) {
     m["scroll-auto"] = "scroll-behavior: auto"
     m["scroll-smooth"] = "scroll-behavior: smooth"
     m["appearance-none"] = "-webkit-appearance: none;\n     -moz-appearance: none;\n          appearance: none"
+    m["sr-only"] = "position: absolute;\n  width: 1px;\n  height: 1px;\n  padding: 0;\n  margin: -1px;\n  overflow: hidden;\n  clip: rect(0, 0, 0, 0);\n  white-space: nowrap;\n  border-width: 0"
+    m["not-sr-only"] = "position: static;\n  width: auto;\n  height: auto;\n  padding: 0;\n  margin: 0;\n  overflow: visible;\n  clip: auto;\n  white-space: normal"
     m["outline-none"] = "outline: 2px solid transparent;\n  outline-offset: 2px"
     m["outline"] = "outline-style: solid"
     m["outline-dashed"] = "outline-style: dashed"

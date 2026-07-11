@@ -1,0 +1,23 @@
+// pagination.src — page switcher: prev / numbered pages / next. Buttons carry
+// data-action="page" data-arg=<n> for a wasm export; the active page is inked.
+
+func ui_page_btn(label, arg, active, disabled) (h) {
+    c := "inline-flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-sm transition"
+    if active { c = c + " border-stone-900 bg-stone-900 text-white" }
+    else { c = c + " border-stone-200 bg-white text-stone-900 hover:bg-stone-100" }
+    dis := ""
+    if disabled { dis = " disabled"  c = c + " opacity-50" }
+    h = "<button class=\"" + c + "\" data-action=\"page\" data-arg=\"" + str(arg) + "\"" + dis + ">" + ui_esc(label) + "</button>"
+}
+
+func ui_pagination(current, total) (h) {
+    h = "<nav class=\"flex items-center gap-1.5\">"
+    h = h + ui_page_btn("Prev", current - 1, false, current <= 1)
+    i := 1
+    while i <= total {
+        h = h + ui_page_btn(str(i), i, i == current, false)
+        i = i + 1
+    }
+    h = h + ui_page_btn("Next", current + 1, false, current >= total)
+    h = h + "</nav>"
+}

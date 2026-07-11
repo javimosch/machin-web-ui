@@ -1,0 +1,9 @@
+// tooltip.src — hover hint, no JS: the wrapper is a `group`, the bubble is
+// hidden until group-hover shows it above the trigger.
+
+func ui_tooltip(trigger, tip) (h) {
+    h = "<span class=\"group relative inline-block\">"
+    h = h + trigger
+    h = h + "<span class=\"absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-stone-900 px-2 py-1 text-xs text-white group-hover:block\">" + ui_esc(tip) + "</span>"
+    h = h + "</span>"
+}
