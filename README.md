@@ -159,6 +159,8 @@ bin/tailwindcss        dev-only oracle binary (not committed)
 
 ## Roadmap
 
+The durable direction lives in [docs/VISION.md](docs/VISION.md).
+
 - [x] **M0 spike — tw engine core**, oracle-verified
 - [x] preflight + `.mfl`/`.src` file scanner (`machin-web-ui css`), oracle-verified
 - [x] `machin-web-ui coverage` + `check` — honest, queryable compat surface
