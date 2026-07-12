@@ -8,7 +8,8 @@ func page() (h) {
     h = "<!doctype html><html lang=en><head><meta charset=utf-8>"
     h = h + "<meta name=viewport content=\"width=device-width,initial-scale=1\">"
     h = h + "<title>" + app_name() + "</title>"
-    h = h + "<style>" + tw_css_text() + "</style></head>"
+    h = h + "<style id=\"tw-style\">" + tw_css_text() + "</style>"
+    h = h + "<script>window.__THEMES=" + themes_js() + "</script></head>"
     h = h + "<body class=\"" + ui_page_classes() + " scroll-smooth\">"
     h = h + "<div id=app>"
     h = h + app_view("<span data-s=\"count\">0</span>", "<span data-s=\"panel\">" + tab_panel_text(0) + "</span>", "<span data-s=\"pg\">2</span>", "40%")

@@ -15,42 +15,51 @@
 //    "line":"#e7e5e4","accent":"#0d9488","ok":"#16a34a","warn":"#d97706",
 //    "danger":"#dc2626","info":"#0284c7"}
 
-type Theme struct {
-    canvas string
-    surface string
-    ink string
-    muted string
-    line string
-    accent string
-    ok string
-    warn string
-    danger string
-    info string
-    radius string
-    fontSans string
-    fontMono string
+// NOTE: no parse()/struct here — strings that flow out of a parse()'d struct
+// through loops with branches segfault (javimosch/machin#449). The theme
+// format is flat JSON with fixed keys, so a hand-rolled extractor is enough.
+func theme_field(j, key) (v) {
+    v = ""
+    needle := "\"" + key + "\""
+    p := index(j, needle)
+    if p < 0 { return }
+    i := p + len(needle)
+    // skip to the opening quote of the value
+    while i < len(j) {
+        ch := charat(j, i)
+        if ch == "\"" { break }
+        if ch != ":" && ch != " " && ch != "\t" && ch != "\n" { return }
+        i = i + 1
+    }
+    if i >= len(j) { return }
+    i = i + 1
+    // read until the closing unescaped quote, unescaping \" and \\
+    while i < len(j) {
+        ch := charat(j, i)
+        if ch == "\\" && i + 1 < len(j) {
+            v = v + charat(j, i + 1)
+            i = i + 2
+        } else {
+            if ch == "\"" { return }
+            v = v + ch
+            i = i + 1
+        }
+    }
 }
 
 func theme_token_names() (xs) {
     xs = []string{"canvas", "surface", "ink", "muted", "line", "accent", "ok", "warn", "danger", "info"}
 }
 
-func theme_token_value(t, name) (v) {
-    if name == "canvas" { v = t.canvas }
-    if name == "surface" { v = t.surface }
-    if name == "ink" { v = t.ink }
-    if name == "muted" { v = t.muted }
-    if name == "line" { v = t.line }
-    if name == "accent" { v = t.accent }
-    if name == "ok" { v = t.ok }
-    if name == "warn" { v = t.warn }
-    if name == "danger" { v = t.danger }
-    if name == "info" { v = t.info }
-}
 
-// the default theme: today's stone look, as explicit hexes
-func theme_default() (t) {
-    t = Theme{canvas: "#fafaf9", surface: "#ffffff", ink: "#1c1917", muted: "#78716c", line: "#e7e5e4", accent: "#1c1917", ok: "#16a34a", warn: "#d97706", danger: "#dc2626", info: "#0284c7", radius: "", fontSans: "", fontMono: ""}
+
+// the default theme: today's stone look. Values are PALETTE REFERENCES
+// ("@hue-shade"): the token gets the real Tailwind ramp for that hue and the
+// referenced shade as its DEFAULT — so the default theme is pixel-identical
+// to the pre-theming components. "#hex" values go through the ramp generator
+// instead. "@white" is special: DEFAULT #ffffff, ramp from stone.
+func theme_default_values() (xs) {
+    xs = []string{"@stone-50", "@white", "@stone-900", "@stone-500", "@stone-200", "@stone-900", "@green-600", "@amber-500", "@red-600", "@sky-600"}
 }
 
 // --- hex <-> rgb ---
@@ -168,9 +177,50 @@ func theme_ramp(basehex) (keys, hexes, ok) {
     }
 }
 
+// resolve a palette reference "@hue-shade" / "@white" into (huename, defshade)
+func theme_ref_parse(v) (hue, shade, ok) {
+    ok = false
+    if has_prefix(v, "@") == false { return }
+    r := substr(v, 1, len(v))
+    if r == "white" { hue = "white"  shade = ""  ok = true  return }
+    d := 0 - 1
+    i := 0
+    while i < len(r) {
+        if charat(r, i) == "-" { d = i }
+        i = i + 1
+    }
+    if d < 0 { return }
+    hue = substr(r, 0, d)
+    shade = substr(r, d + 1, len(r))
+    ok = true
+}
+
+// register a palette-reference token: copy the real Tailwind ramp
+func theme_register_ref(pal, hexm, name, v) (ok) {
+    hue, shade, rok := theme_ref_parse(v)
+    if rok == false { ok = false  return }
+    if hue == "white" {
+        pal[name] = "255 255 255"
+        hexm[name] = "#fff"
+        hue = "stone"
+    } else {
+        if has(pal, hue + "-" + shade) == false { ok = false  return }
+        pal[name] = pal[hue + "-" + shade]
+        hexm[name] = hexm[hue + "-" + shade]
+    }
+    for _, k := range theme_shade_keys() {
+        if has(pal, hue + "-" + k) == false { ok = false  return }
+        pal[name + "-" + k] = pal[hue + "-" + k]
+        hexm[name + "-" + k] = hexm[hue + "-" + k]
+    }
+    ok = true
+}
+
 // register one named color (DEFAULT + ramp) into the engine's palette maps.
 // pal wants "R G B" triplets, hex wants "#rrggbb" (gradients/outline/ring-offset).
+// "@..." values copy a real palette ramp; "#hex" values generate one.
 func theme_register(pal, hexm, name, basehex) (ok) {
+    if has_prefix(basehex, "@") { ok = theme_register_ref(pal, hexm, name, basehex)  return }
     r, g, b, hok := theme_hex_rgb(basehex)
     if hok == false { ok = false  return }
     pal[name] = str(r) + " " + str(g) + " " + str(b)
@@ -187,36 +237,153 @@ func theme_register(pal, hexm, name, basehex) (ok) {
     ok = true
 }
 
-// apply a theme.json string to a ctx (mutates its palette maps in place).
+// register the built-in default theme (always on: components speak semantic
+// tokens; a --theme file overwrites the same keys)
+func theme_apply_default(c) {
+    names := theme_token_names()
+    vals := theme_default_values()
+    i := 0
+    while i < len(names) {
+        theme_register(c.pal, c.hex, names[i], vals[i])
+        i = i + 1
+    }
+}
+
+// --- radius presets: rewrite every rounded-* entry's border-radius values ---
+func theme_radius_scale(preset, key) (v) {
+    // key: none sm DEFAULT md lg xl 2xl 3xl (full is never rescaled)
+    v = ""
+    if preset == "sharp" {
+        v = "0px"
+        return
+    }
+    if preset == "round" {
+        if key == "none" { v = "0px" }
+        if key == "sm" { v = "0.25rem" }
+        if key == "DEFAULT" { v = "0.375rem" }
+        if key == "md" { v = "0.5rem" }
+        if key == "lg" { v = "0.75rem" }
+        if key == "xl" { v = "1rem" }
+        if key == "2xl" { v = "1.5rem" }
+        if key == "3xl" { v = "2rem" }
+    }
+}
+
+func theme_radius_default(key) (v) {
+    v = ""
+    if key == "none" { v = "0px" }
+    if key == "sm" { v = "0.125rem" }
+    if key == "DEFAULT" { v = "0.25rem" }
+    if key == "md" { v = "0.375rem" }
+    if key == "lg" { v = "0.5rem" }
+    if key == "xl" { v = "0.75rem" }
+    if key == "2xl" { v = "1rem" }
+    if key == "3xl" { v = "1.5rem" }
+}
+
+// scale key of a rounded-* class name ("" = full / unknown, leave alone)
+func theme_rounded_scale_key(cls) (k) {
+    k = ""
+    if cls == "rounded" { k = "DEFAULT"  return }
+    if has_prefix(cls, "rounded-") == false { return }
+    rest := substr(cls, 8, len(cls))
+    // strip a side/corner segment if present
+    d := index(rest, "-")
+    seg := rest
+    if d >= 0 { seg = substr(rest, 0, d) }
+    if seg == "t" || seg == "r" || seg == "b" || seg == "l" || seg == "tl" || seg == "tr" || seg == "br" || seg == "bl" {
+        if d < 0 { k = "DEFAULT"  return }
+        rest = substr(rest, d + 1, len(rest))
+    }
+    if rest == "full" { return }
+    k = rest
+}
+
+func theme_radius_map(m, preset) {
+    for _, k := range keys(m) {
+        if has_prefix(k, "rounded") == false { continue }
+        sk := theme_rounded_scale_key(k)
+        if len(sk) == 0 { continue }
+        oldv := theme_radius_default(sk)
+        newv := theme_radius_scale(preset, sk)
+        if len(oldv) == 0 || len(newv) == 0 { continue }
+        m[k] = replace(m[k], ": " + oldv, ": " + newv)
+    }
+}
+
+func theme_apply_radius(c, preset) {
+    if preset != "sharp" && preset != "round" { return }
+    theme_radius_map(c.st, preset)
+    theme_radius_map(c.sg, preset)
+}
+
+// --- font theming: swap the font-sans / font-mono stacks ---
+func theme_stack_sans() (s) {
+    s = "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\""
+}
+
+func theme_stack_mono() (s) {
+    s = "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace"
+}
+
+func theme_apply_fonts(c, sans, mono) {
+    if len(sans) > 0 { c.sg["font-sans"] = "font-family: " + sans }
+    if len(mono) > 0 { c.sg["font-mono"] = "font-family: " + mono }
+}
+
+// themed preflight: the base stacks appear verbatim in @tailwind base
+func theme_preflight(pf, sans, mono) (out) {
+    out = pf
+    if len(sans) > 0 { out = replace(out, theme_stack_sans(), sans) }
+    if len(mono) > 0 { out = replace(out, theme_stack_mono(), mono) }
+}
+
+// apply a theme.json string to a ctx (mutates its maps in place).
 // Returns the names that failed to parse ("" = all good).
 func theme_apply(c, themejson) (bad) {
-    t := parse(themejson, Theme{})
     bad = ""
-    for _, name := range theme_token_names() {
-        v := theme_token_value(t, name)
-        if len(v) == 0 { continue }
-        if theme_register(c.pal, c.hex, name, v) == false { bad = bad + " " + name }
+    names := theme_token_names()
+    i := 0
+    while i < len(names) {
+        v := theme_field(themejson, names[i])
+        if len(v) > 0 {
+            if theme_register(c.pal, c.hex, names[i], v) == false { bad = bad + " " + names[i] }
+        }
+        i = i + 1
     }
+    theme_apply_radius(c, theme_field(themejson, "radius"))
+    theme_apply_fonts(c, theme_field(themejson, "fontSans"), theme_field(themejson, "fontMono"))
     bad = trim(bad)
 }
 
-// resolved theme as JSON (for `theme check` and the oracle harness)
+// resolved theme as JSON (for `theme check` and the oracle harness): resolves
+// BOTH @references (via the real palette) and #hex ramps. Missing tokens fall
+// back to the built-in default, so the output is always the full token set.
 func theme_resolved_json(themejson) (out) {
-    t := parse(themejson, Theme{})
+    pal := tw_palette()
+    hexm := tw_palette_hex()
     items := []string{}
-    for _, name := range theme_token_names() {
-        v := theme_token_value(t, name)
-        if len(v) == 0 { continue }
-        keys, hexes, ok := theme_ramp(v)
-        if ok == false { continue }
-        r, g, b, _ := theme_hex_rgb(v)
-        sh := "\"DEFAULT\": \"#" + hex2(r) + hex2(g) + hex2(b) + "\""
-        i := 0
-        while i < len(keys) {
-            sh = sh + ", \"" + keys[i] + "\": \"" + hexes[i] + "\""
-            i = i + 1
+    names := theme_token_names()
+    dvals := theme_default_values()
+    n := 0
+    while n < len(names) {
+        name := names[n]
+        v := theme_field(themejson, name)
+        if len(v) == 0 { v = dvals[n] }
+        tmp_pal := make(map[string]string)
+        tmp_hex := make(map[string]string)
+        // reuse the real registration path against a scratch map seeded with
+        // the palette (refs copy from it). No `continue` (machin#449).
+        for _, k := range keys(pal) { tmp_pal[k] = pal[k] }
+        for _, k := range keys(hexm) { tmp_hex[k] = hexm[k] }
+        if theme_register(tmp_pal, tmp_hex, name, v) {
+            sh := "\"DEFAULT\": \"" + tmp_hex[name] + "\""
+            for _, k := range theme_shade_keys() {
+                sh = sh + ", \"" + k + "\": \"" + tmp_hex[name + "-" + k] + "\""
+            }
+            items = append(items, "  \"" + name + "\": {" + sh + "}")
         }
-        items = append(items, "  \"" + name + "\": {" + sh + "}")
+        n = n + 1
     }
     out = "{\n" + join(items, ",\n") + "\n}"
 }

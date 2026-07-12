@@ -8,6 +8,9 @@ func scan_charset() (s) {
 
 func scan_ext_ok(p) (ok) {
     ok = has_suffix(p, ".src") || has_suffix(p, ".mfl") || has_suffix(p, ".html") || has_suffix(p, ".js")
+    // generated embeds (assets_gen.src etc.) contain the PREVIOUS build's
+    // stylesheet — scanning them balloons the candidate set for nothing
+    if has_suffix(p, "_gen.src") { ok = false }
 }
 
 // extract candidate tokens from text into acc
@@ -48,20 +51,51 @@ func scan_path(acc, p) (out) {
     out = scan_extract(out, txt)
 }
 
+// dedupe candidates (scan output repeats classes heavily; sort after this)
+func dedupe_strings(xs) (out) {
+    seen := make(map[string]bool)
+    out = []string{}
+    for _, x := range xs {
+        if has(seen, x) == false {
+            seen[x] = true
+            out = append(out, x)
+        }
+    }
+}
+
+// bottom-up merge sort: the scanner can produce tens of thousands of
+// candidates (big repos), where insertion sort is minutes and this is instant
 func sort_strings(xs) (out) {
     out = xs
-    i := 1
-    while i < len(out) {
-        j := i
-        // NOTE: the bound and the compare are separate checks — MFL's && does
-        // not short-circuit, so `j > 0 && f(out[j - 1])` would index out[-1]
-        while j > 0 {
-            if out[j] < out[j - 1] == false { break }
-            t := out[j]
-            out[j] = out[j - 1]
-            out[j - 1] = t
-            j = j - 1
+    n := len(out)
+    buf := []string{}
+    i := 0
+    while i < n { buf = append(buf, "")  i = i + 1 }
+    width := 1
+    while width < n {
+        lo := 0
+        while lo < n {
+            mid := lo + width
+            hi := lo + width * 2
+            if mid > n { mid = n }
+            if hi > n { hi = n }
+            a := lo
+            b := mid
+            k := lo
+            while k < hi {
+                use_a := b >= hi
+                if use_a == false {
+                    if a < mid {
+                        if out[a] < out[b] || out[a] == out[b] { use_a = true }
+                    }
+                }
+                if use_a { buf[k] = out[a]  a = a + 1 } else { buf[k] = out[b]  b = b + 1 }
+                k = k + 1
+            }
+            k = lo
+            while k < hi { out[k] = buf[k]  k = k + 1 }
+            lo = lo + width * 2
         }
-        i = i + 1
+        width = width * 2
     }
 }

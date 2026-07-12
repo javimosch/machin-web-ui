@@ -7,13 +7,13 @@
 
 func ui_combobox(name, placeholder, options, value) (h) {
     h = "<div class=\"relative\" data-combo>"
-    h = h + "<input name=\"" + name + "\" autocomplete=\"off\" data-combo-input class=\"w-full rounded-md border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-3 py-2 text-sm text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-stone-300 dark:focus:ring-stone-600 focus:border-stone-300 dark:focus:border-stone-600\""
+    h = h + "<input name=\"" + name + "\" autocomplete=\"off\" data-combo-input class=\"w-full rounded-md border border-line dark:border-line-800 bg-surface dark:bg-surface-900 px-3 py-2 text-sm text-ink dark:text-ink-100 placeholder:text-muted-400 dark:placeholder:text-muted-500 focus:outline-none focus:ring-2 focus:ring-line-300 dark:focus:ring-line-600 focus:border-line-300 dark:focus:border-line-600\""
     if len(placeholder) > 0 { h = h + " placeholder=\"" + ui_esc(placeholder) + "\"" }
     if len(value) > 0 { h = h + " value=\"" + ui_esc(value) + "\"" }
     h = h + ">"
-    h = h + "<div data-combo-list class=\"absolute z-10 mt-1 hidden max-h-48 w-full overflow-y-auto rounded-md border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 py-1\">"
+    h = h + "<div data-combo-list class=\"absolute z-10 mt-1 hidden max-h-48 w-full overflow-y-auto rounded-md border border-line dark:border-line-800 bg-surface dark:bg-surface-900 py-1\">"
     for _, o := range options {
-        h = h + "<button type=\"button\" data-combo-opt class=\"block w-full px-3 py-1.5 text-left text-sm text-stone-900 dark:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800\">" + ui_esc(o) + "</button>"
+        h = h + "<button type=\"button\" data-combo-opt class=\"block w-full px-3 py-1.5 text-left text-sm text-ink dark:text-ink-100 hover:bg-surface-100 dark:hover:bg-surface-800\">" + ui_esc(o) + "</button>"
     }
     h = h + "</div></div>"
 }

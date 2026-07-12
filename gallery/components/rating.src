@@ -10,10 +10,10 @@ func ui_rating(value, max, action) (h) {
     h = "<span class=\"inline-flex items-center gap-0.5\">"
     i := 1
     while i <= max {
-        c := "text-stone-300"
-        if i <= value { c = "text-amber-500" }
+        c := "text-muted-300"
+        if i <= value { c = "text-warn-500" }
         if len(action) > 0 {
-            h = h + "<button class=\"" + c + " transition hover:text-amber-500\" data-action=\"" + action + "\" data-arg=\"" + str(i) + "\">" + ui_star_svg() + "</button>"
+            h = h + "<button class=\"" + c + " transition hover:text-warn-500\" data-action=\"" + action + "\" data-arg=\"" + str(i) + "\">" + ui_star_svg() + "</button>"
         } else {
             h = h + "<span class=\"" + c + "\">" + ui_star_svg() + "</span>"
         }

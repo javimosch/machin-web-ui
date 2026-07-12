@@ -3,15 +3,15 @@
 // ("+", "-", " ") and text.
 
 func ui_diff_line(sign, text) (h) {
-    c := "text-stone-500 dark:text-stone-400"
-    if sign == "+" { c = "bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-300" }
-    if sign == "-" { c = "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-300" }
-    h = "<div class=\"flex " + c + "\"><span class=\"w-8 shrink-0 select-none text-center text-stone-400\">" + sign + "</span>"
+    c := "text-muted dark:text-muted-400"
+    if sign == "+" { c = "bg-ok-50 text-ok-800 dark:bg-ok-950 dark:text-ok-300" }
+    if sign == "-" { c = "bg-danger-50 text-danger-800 dark:bg-danger-950 dark:text-danger-300" }
+    h = "<div class=\"flex " + c + "\"><span class=\"w-8 shrink-0 select-none text-center text-muted-400\">" + sign + "</span>"
     h = h + "<pre class=\"min-w-0 flex-1 overflow-x-auto pr-3\">" + ui_esc(text) + "</pre></div>"
 }
 
 func ui_diff_view(lines) (h) {
-    h = "<div class=\"overflow-hidden rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 py-2 text-xs\">"
+    h = "<div class=\"overflow-hidden rounded-lg border border-line dark:border-line-800 bg-surface dark:bg-surface-900 py-2 text-xs\">"
     i := 0
     while i + 1 < len(lines) {
         h = h + ui_diff_line(lines[i], lines[i + 1])

@@ -6,8 +6,8 @@ func ui_radio(name, label, checked) (h) {
     if checked { ck = " checked" }
     h = "<label class=\"inline-flex cursor-pointer items-center gap-2.5\">"
     h = h + "<input type=\"radio\" name=\"" + name + "\" class=\"peer sr-only\"" + ck + ">"
-    h = h + "<span class=\"h-4 w-4 rounded-full border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 transition peer-checked:border-4 peer-checked:border-stone-900 dark:peer-checked:border-stone-100\"></span>"
-    h = h + "<span class=\"text-sm text-stone-900 dark:text-stone-100\">" + ui_esc(label) + "</span>"
+    h = h + "<span class=\"h-4 w-4 rounded-full border border-line-300 dark:border-line-700 bg-surface dark:bg-surface-900 transition peer-checked:border-4 peer-checked:border-ink dark:peer-checked:border-ink-100\"></span>"
+    h = h + "<span class=\"text-sm text-ink dark:text-ink-100\">" + ui_esc(label) + "</span>"
     h = h + "</label>"
 }
 

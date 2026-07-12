@@ -173,9 +173,15 @@ def main():
     # as the equivalent tailwind.config.js custom colors would
     themes = {
         "default": {},
-        "teal": {"accent": "#0d9488", "ink": "#134e4a", "canvas": "#f0fdfa"},
+        "teal": {"accent": "#0d9488", "ink": "#134e4a", "canvas": "#f0fdfa",
+                 "radius": "round", "fontSans": "Inter, sans-serif", "fontMono": "Fira Code, monospace"},
         "hostile": {"accent": "#ff0000", "ink": "#010203", "muted": "#fefefe",
-                    "line": "#7f7f7f", "warn": "#8800ff"},
+                    "line": "#7f7f7f", "warn": "#8800ff", "radius": "sharp"},
+    }
+    RADIUS = {
+        "round": {"none": "0px", "sm": "0.25rem", "DEFAULT": "0.375rem", "md": "0.5rem",
+                  "lg": "0.75rem", "xl": "1rem", "2xl": "1.5rem", "3xl": "2rem", "full": "9999px"},
+        "sharp": {k: "0px" for k in ("none", "sm", "DEFAULT", "md", "lg", "xl", "2xl", "3xl")} | {"full": "9999px"},
     }
     theme_ok = True
     tnames = "canvas surface ink muted line accent ok warn danger info".split()
@@ -187,9 +193,15 @@ def main():
         (HERE / "theme.json").write_text(json.dumps(theme))
         resolved = json.loads(subprocess.run([str(binary), "theme", "check", str(HERE / "theme.json")],
                                              capture_output=True, text=True, check=True).stdout)
+        ext = {"colors": resolved}
+        if theme.get("radius"): ext["borderRadius"] = RADIUS[theme["radius"]]
+        ff = {}
+        if theme.get("fontSans"): ff["sans"] = theme["fontSans"]
+        if theme.get("fontMono"): ff["mono"] = theme["fontMono"]
+        if ff: ext["fontFamily"] = ff
         (HERE / "tailwind.theme.config.js").write_text(
             "module.exports = { content: [\"./content.html\"], corePlugins: { preflight: false },\n"
-            "  theme: { extend: { colors: " + json.dumps(resolved) + " } } }\n")
+            "  theme: { extend: " + json.dumps(ext) + " } }\n")
         tcls = []
         shades = ["", "-50", "-200", "-500", "-700", "-950"]
         for n in tnames:
@@ -199,6 +211,8 @@ def main():
                      f"to-{n}", f"outline-{n}-600", f"ring-offset-{n}-100", f"decoration-{n}-500",
                      f"bg-{n}-500/40", f"bg-{n}/75", f"border-l-{n}-600",
                      f"dark:bg-{n}-950", f"hover:bg-{n}-700", f"md:text-{n}-500"]
+        tcls += [f"rounded{sfx}" for sfx in ["", "-none", "-sm", "-md", "-lg", "-xl", "-2xl", "-3xl", "-full"]]
+        tcls += ["rounded-t-lg", "rounded-br-md", "rounded-l", "font-sans", "font-mono"]
         (HERE / "content.html").write_text('<i class="' + " ".join(tcls) + '"></i>')
         ocss = run_oracle(None, config="tailwind.theme.config.js", out="oracle_theme.css")
         r = subprocess.run([str(binary), "css", "--no-preflight", "--theme", str(HERE / "theme.json"), "-"],

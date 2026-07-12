@@ -164,7 +164,7 @@ func cmd_css(a) {
     } else {
         if len(paths) == 0 { paths = append(paths, ".") }
         for _, p := range paths { classes = scan_path(classes, p) }
-        classes = sort_by_depth(sort_by_rank(sort_strings(classes)))
+        classes = sort_by_depth(sort_by_rank(sort_strings(dedupe_strings(classes))))
     }
     themejson := ""
     if len(theme_file) > 0 {
@@ -172,7 +172,13 @@ func cmd_css(a) {
         if len(themejson) == 0 { println("error: cannot read theme file " + theme_file)  exit(1) }
     }
     css := tw_css_themed(classes, warn, dark_class, themejson)
-    if preflight { css = tw_preflight() + css }
+    if preflight {
+        pf := tw_preflight()
+        if len(themejson) > 0 {
+            pf = theme_preflight(pf, theme_field(themejson, "fontSans"), theme_field(themejson, "fontMono"))
+        }
+        css = pf + css
+    }
     if len(outfile) > 0 {
         write_file(outfile, css)
         println("wrote " + outfile + " (" + str(len(css)) + " bytes)")
@@ -187,10 +193,18 @@ func cmd_theme(a) {
     if len(a) < 3 { usage()  exit(2) }
     sub := a[2]
     if sub == "init" {
-        t := theme_default()
-        j := "{\n  \"canvas\": \"" + t.canvas + "\",\n  \"surface\": \"" + t.surface + "\",\n  \"ink\": \"" + t.ink + "\",\n  \"muted\": \"" + t.muted + "\",\n  \"line\": \"" + t.line + "\",\n  \"accent\": \"" + t.accent + "\",\n  \"ok\": \"" + t.ok + "\",\n  \"warn\": \"" + t.warn + "\",\n  \"danger\": \"" + t.danger + "\",\n  \"info\": \"" + t.info + "\"\n}"
+        names := theme_token_names()
+        vals := theme_default_values()
+        j := "{"
+        i := 0
+        while i < len(names) {
+            j = j + "\n  \"" + names[i] + "\": \"" + vals[i] + "\","
+            i = i + 1
+        }
+        j = j + "\n  \"radius\": \"\",\n  \"fontSans\": \"\",\n  \"fontMono\": \"\"\n}"
         write_file("theme.json", j)
-        println("wrote theme.json (the built-in stone look — edit the hexes, rebuild your css with --theme theme.json)")
+        println("wrote theme.json — values are palette refs (@hue-shade) or hexes (#0d9488 -> generated ramp);")
+        println("radius: \"\"|sharp|round; fontSans/fontMono: css stacks. Rebuild your css with --theme theme.json")
         return
     }
     if sub == "check" {

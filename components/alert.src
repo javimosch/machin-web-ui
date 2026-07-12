@@ -2,15 +2,15 @@
 // "success", "warning", "error". Title may be "" for a plain message.
 
 func ui_alert_classes(kind) (c) {
-    c = "rounded-md border border-stone-200 dark:border-stone-800 border-l-4 bg-white dark:bg-stone-900 px-4 py-3 text-sm"
-    if kind == "info" { c = c + " border-l-sky-600 dark:border-l-sky-600" }
-    if kind == "success" { c = c + " border-l-green-600 dark:border-l-green-600" }
-    if kind == "warning" { c = c + " border-l-amber-500 dark:border-l-amber-500" }
-    if kind == "error" { c = c + " border-l-red-600 dark:border-l-red-600" }
+    c = "rounded-md border border-line dark:border-line-800 border-l-4 bg-surface dark:bg-surface-900 px-4 py-3 text-sm"
+    if kind == "info" { c = c + " border-l-info-600 dark:border-l-info-600" }
+    if kind == "success" { c = c + " border-l-ok-600 dark:border-l-ok-600" }
+    if kind == "warning" { c = c + " border-l-warn-500 dark:border-l-warn-500" }
+    if kind == "error" { c = c + " border-l-danger-600 dark:border-l-danger-600" }
 }
 
 func ui_alert(kind, title, body) (h) {
     t := ""
-    if len(title) > 0 { t = "<p class=\"font-medium text-stone-900 dark:text-stone-100\">" + ui_esc(title) + "</p>" }
-    h = "<div class=\"" + ui_alert_classes(kind) + "\">" + t + "<p class=\"text-stone-500 dark:text-stone-400\">" + ui_esc(body) + "</p></div>"
+    if len(title) > 0 { t = "<p class=\"font-medium text-ink dark:text-ink-100\">" + ui_esc(title) + "</p>" }
+    h = "<div class=\"" + ui_alert_classes(kind) + "\">" + t + "<p class=\"text-muted dark:text-muted-400\">" + ui_esc(body) + "</p></div>"
 }

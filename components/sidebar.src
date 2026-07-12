@@ -11,13 +11,13 @@ func ui_sidebar_brand(name, tag) (h) {
 func ui_sidebar_group(title, labels, hrefs, active) (h) {
     h = "<nav class=\"mb-6 flex flex-col gap-0.5\">"
     if len(title) > 0 {
-        h = h + "<p class=\"mb-2 text-xs font-medium uppercase tracking-wider text-stone-400\">" + ui_esc(title) + "</p>"
+        h = h + "<p class=\"mb-2 text-xs font-medium uppercase tracking-wider text-muted-400\">" + ui_esc(title) + "</p>"
     }
     i := 0
     for _, l := range labels {
         c := "rounded-md px-2.5 py-1.5 text-sm transition"
-        if l == active { c = c + " bg-stone-100 dark:bg-stone-800 font-medium text-stone-900 dark:text-stone-100" }
-        else { c = c + " text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100" }
+        if l == active { c = c + " bg-surface-100 dark:bg-surface-800 font-medium text-ink dark:text-ink-100" }
+        else { c = c + " text-muted dark:text-muted-400 hover:bg-surface-100 dark:hover:bg-surface-800 hover:text-ink dark:hover:text-ink-100" }
         h = h + "<a class=\"" + c + "\" href=\"" + hrefs[i] + "\">" + ui_esc(l) + "</a>"
         i = i + 1
     }

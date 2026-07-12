@@ -48,7 +48,7 @@ func ui_bars(values, labels) (h) {
     h = h + "</svg>"
     if len(labels) == n {
         h = h + "<div class=\"flex\">"
-        for _, l := range labels { h = h + "<span class=\"flex-1 text-center text-xs text-stone-400\">" + ui_esc(l) + "</span>" }
+        for _, l := range labels { h = h + "<span class=\"flex-1 text-center text-xs text-muted-400\">" + ui_esc(l) + "</span>" }
         h = h + "</div>"
     }
     h = h + "</div>"
@@ -65,6 +65,6 @@ func ui_donut(pct, caption) (h) {
     h = h + "<circle cx=\"18\" cy=\"18\" r=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" pathLength=\"100\" stroke-dasharray=\"" + str(p) + " 100\" transform=\"rotate(-90 18 18)\"/>"
     h = h + "<text x=\"18\" y=\"21\" text-anchor=\"middle\" font-size=\"8\" fill=\"currentColor\">" + str(p) + "%</text>"
     h = h + "</svg>"
-    if len(caption) > 0 { h = h + "<span class=\"text-xs text-stone-500 dark:text-stone-400\">" + ui_esc(caption) + "</span>" }
+    if len(caption) > 0 { h = h + "<span class=\"text-xs text-muted dark:text-muted-400\">" + ui_esc(caption) + "</span>" }
     h = h + "</div>"
 }

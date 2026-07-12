@@ -7,6 +7,7 @@ extern "env" {
     fn tab_mark(string, i32, string, string)    // host: re-class #<nav>'s children (idx, active cls, idle cls)
     fn after(i32, i32)                          // host timer: setTimeout(ms) -> timer_fired(key)
     fn toggle_dark()                            // host: flip .dark on <html> (darkMode 'class')
+    fn set_theme(string)                        // host: swap #tw-style to window.__THEMES[name]
 }
 
 var count = 0                   // signal id
@@ -182,6 +183,13 @@ export func banner_close(arg) { dom_show("top-banner", 0) }
 
 // data-action="theme" (the Dark mode switch): flip the .dark class
 export func theme(arg) { toggle_dark() }
+
+// theme switcher dropdown (pre-generated stylesheets, host-swapped)
+export func theme_stone(arg) { set_theme("stone") }
+
+export func theme_teal(arg) { set_theme("teal") }
+
+export func theme_crimson(arg) { set_theme("crimson") }
 
 // two-click range: first click starts a new range, second (>= start) closes it
 export func cal_pick(arg) {

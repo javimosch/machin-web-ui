@@ -2,12 +2,12 @@
 // hairlines. `items` alternates label, value-markup (pass ui_badge etc).
 
 func ui_desc_list(items) (h) {
-    h = "<dl class=\"divide-y divide-stone-200 dark:divide-stone-800\">"
+    h = "<dl class=\"divide-y divide-line dark:divide-line-800\">"
     i := 0
     while i + 1 < len(items) {
         h = h + "<div class=\"grid grid-cols-1 gap-1 py-2.5 sm:grid-cols-3\">"
-        h = h + "<dt class=\"text-sm text-stone-500 dark:text-stone-400\">" + ui_esc(items[i]) + "</dt>"
-        h = h + "<dd class=\"text-sm text-stone-900 dark:text-stone-100 sm:col-span-2\">" + items[i + 1] + "</dd>"
+        h = h + "<dt class=\"text-sm text-muted dark:text-muted-400\">" + ui_esc(items[i]) + "</dt>"
+        h = h + "<dd class=\"text-sm text-ink dark:text-ink-100 sm:col-span-2\">" + items[i + 1] + "</dd>"
         h = h + "</div>"
         i = i + 2
     }

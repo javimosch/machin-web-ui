@@ -6,7 +6,7 @@ func ui_otp(name, n) (h) {
     h = "<div class=\"flex items-center gap-2\">"
     i := 0
     while i < n {
-        h = h + "<input name=\"" + name + "-" + str(i) + "\" maxlength=\"1\" inputmode=\"numeric\" class=\"h-12 w-10 rounded-md border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 text-center text-lg font-medium text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-stone-300 dark:focus:ring-stone-600 focus:border-stone-300 dark:focus:border-stone-600\">"
+        h = h + "<input name=\"" + name + "-" + str(i) + "\" maxlength=\"1\" inputmode=\"numeric\" class=\"h-12 w-10 rounded-md border border-line dark:border-line-800 bg-surface dark:bg-surface-900 text-center text-lg font-medium text-ink dark:text-ink-100 focus:outline-none focus:ring-2 focus:ring-line-300 dark:focus:ring-line-600 focus:border-line-300 dark:focus:border-line-600\">"
         i = i + 1
     }
     h = h + "</div>"

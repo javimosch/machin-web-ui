@@ -834,6 +834,7 @@ func tw_css_mode(classes, warn, dark_class) (out) {
 func tw_css_themed(classes, warn, dark_class, themejson) (out) {
     c := tw_ctx()
     c.dc = dark_class
+    theme_apply_default(c)   // semantic tokens always resolve (the stone look)
     if len(themejson) > 0 {
         bad := theme_apply(c, themejson)
         if len(bad) > 0 { out = "/* tw-theme-invalid: " + bad + " */\n"  return }

@@ -7,11 +7,11 @@ func ui_avatar(initials, kind) (h) {
 
 // tint shared with badges: neutral/red/blue/green/yellow
 func ui_badge_tint(kind) (c) {
-    c = "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400"
-    if kind == "red" { c = "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-300" }
-    if kind == "blue" { c = "bg-sky-50 text-sky-800 dark:bg-sky-950 dark:text-sky-300" }
-    if kind == "green" { c = "bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-300" }
-    if kind == "yellow" { c = "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300" }
+    c = "bg-surface-100 dark:bg-surface-800 text-muted-600 dark:text-muted-400"
+    if kind == "red" { c = "bg-danger-50 text-danger-800 dark:bg-danger-950 dark:text-danger-300" }
+    if kind == "blue" { c = "bg-info-50 text-info-800 dark:bg-info-950 dark:text-info-300" }
+    if kind == "green" { c = "bg-ok-50 text-ok-800 dark:bg-ok-950 dark:text-ok-300" }
+    if kind == "yellow" { c = "bg-warn-50 text-warn-800 dark:bg-warn-950 dark:text-warn-300" }
 }
 
 func ui_avatar_img(src, alt) (h) {
@@ -26,7 +26,7 @@ func ui_avatar_stack(initials_list) (h) {
         m := ""
         if i > 0 { m = " -ml-2" }
         kinds := []string{"neutral", "blue", "green", "yellow", "red"}
-        h = h + "<span class=\"inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white dark:border-stone-900 text-xs font-medium uppercase" + m + " " + ui_badge_tint(kinds[i % 5]) + "\">" + ui_esc(ini) + "</span>"
+        h = h + "<span class=\"inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface dark:border-surface-900 text-xs font-medium uppercase" + m + " " + ui_badge_tint(kinds[i % 5]) + "\">" + ui_esc(ini) + "</span>"
         i = i + 1
     }
     h = h + "</span>"

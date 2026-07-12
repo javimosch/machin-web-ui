@@ -2,13 +2,13 @@
 // `items` alternates time, text, time, text, ...
 
 func ui_timeline(items) (h) {
-    h = "<ol class=\"flex flex-col border-l border-stone-200 dark:border-stone-800\">"
+    h = "<ol class=\"flex flex-col border-l border-line dark:border-line-800\">"
     i := 0
     while i + 1 < len(items) {
         h = h + "<li class=\"relative pb-5 pl-5\">"
-        h = h + "<span class=\"absolute -left-1 top-1.5 h-2 w-2 rounded-full bg-stone-900\"></span>"
-        h = h + "<p class=\"text-xs uppercase tracking-wider text-stone-400\">" + ui_esc(items[i]) + "</p>"
-        h = h + "<p class=\"mt-0.5 text-sm text-stone-900 dark:text-stone-100\">" + ui_esc(items[i + 1]) + "</p>"
+        h = h + "<span class=\"absolute -left-1 top-1.5 h-2 w-2 rounded-full bg-ink\"></span>"
+        h = h + "<p class=\"text-xs uppercase tracking-wider text-muted-400\">" + ui_esc(items[i]) + "</p>"
+        h = h + "<p class=\"mt-0.5 text-sm text-ink dark:text-ink-100\">" + ui_esc(items[i + 1]) + "</p>"
         h = h + "</li>"
         i = i + 2
     }

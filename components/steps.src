@@ -8,16 +8,16 @@ func ui_steps(labels, current) (h) {
         dot := "flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium"
         txt := "text-sm"
         if i < current {
-            dot = dot + " bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
-            txt = txt + " text-stone-500 dark:text-stone-400"
+            dot = dot + " bg-ink text-white dark:bg-ink-100 dark:text-ink-900"
+            txt = txt + " text-muted dark:text-muted-400"
         } else if i == current {
-            dot = dot + " border-2 border-stone-900 text-stone-900 dark:border-stone-100 dark:text-stone-100"
-            txt = txt + " font-medium text-stone-900 dark:text-stone-100"
+            dot = dot + " border-2 border-ink text-ink dark:border-ink-100 dark:text-ink-100"
+            txt = txt + " font-medium text-ink dark:text-ink-100"
         } else {
-            dot = dot + " border border-stone-300 dark:border-stone-700 text-stone-400"
-            txt = txt + " text-stone-400"
+            dot = dot + " border border-line-300 dark:border-line-700 text-muted-400"
+            txt = txt + " text-muted-400"
         }
-        if i > 1 { h = h + "<span class=\"h-px w-6 bg-stone-200 dark:bg-stone-700\"></span>" }
+        if i > 1 { h = h + "<span class=\"h-px w-6 bg-line dark:bg-surface-700\"></span>" }
         h = h + "<li class=\"flex items-center gap-2\"><span class=\"" + dot + "\">" + str(i) + "</span><span class=\"" + txt + "\">" + ui_esc(l) + "</span></li>"
         i = i + 1
     }

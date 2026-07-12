@@ -7,10 +7,10 @@
 // Kind tints the left accent: "neutral", "green", "red".
 
 func ui_toast_classes(kind) (c) {
-    c = "pointer-events-auto flex items-center gap-3 rounded-md border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-4 py-3 text-sm text-stone-900 dark:text-stone-100 border-l-2"
-    if kind == "green" { c = c + " border-l-green-600 dark:border-l-green-600" }
-    if kind == "red" { c = c + " border-l-red-600 dark:border-l-red-600" }
-    if kind == "neutral" { c = c + " border-l-stone-400 dark:border-l-stone-400" }
+    c = "pointer-events-auto flex items-center gap-3 rounded-md border border-line dark:border-line-800 bg-surface dark:bg-surface-900 px-4 py-3 text-sm text-ink dark:text-ink-100 border-l-2"
+    if kind == "green" { c = c + " border-l-ok-600 dark:border-l-ok-600" }
+    if kind == "red" { c = c + " border-l-danger-600 dark:border-l-danger-600" }
+    if kind == "neutral" { c = c + " border-l-muted-400 dark:border-l-muted-400" }
 }
 
 func ui_toast(id, slot_name, kind, open) (h) {
@@ -30,7 +30,7 @@ func ui_toast_stack(id) (h) {
 func ui_toast_item(msg, kind, dismiss_action, key) (h) {
     h = "<div class=\"" + ui_toast_classes(kind) + " justify-between\"><span>" + ui_esc(msg) + "</span>"
     if len(dismiss_action) > 0 {
-        h = h + "<button class=\"shrink-0 rounded px-1 text-stone-400 transition hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100\" data-action=\"" + dismiss_action + "\" data-arg=\"" + str(key) + "\">&times;</button>"
+        h = h + "<button class=\"shrink-0 rounded px-1 text-muted-400 transition hover:bg-surface-100 dark:hover:bg-surface-800 hover:text-ink dark:hover:text-ink-100\" data-action=\"" + dismiss_action + "\" data-arg=\"" + str(key) + "\">&times;</button>"
     }
     h = h + "</div>"
 }

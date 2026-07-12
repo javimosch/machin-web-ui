@@ -26,6 +26,6 @@ func app_view(count_frag) (h) {
     h = h + "</header>"
     h = h + ui_card("Counter", counter)
     h = h + ui_card("Form", form)
-    h = h + "<p class=\"text-xs text-stone-500\">SSR first paint - hydrated by a machin wasm client - styled by the built-in Tailwind engine. No Node, no bundler.</p>"
+    h = h + "<p class=\"text-xs text-muted\">SSR first paint - hydrated by a machin wasm client - styled by the built-in Tailwind engine. No Node, no bundler.</p>"
     h = h + ui_toast("toast", "toast_msg", "green", false)
 }

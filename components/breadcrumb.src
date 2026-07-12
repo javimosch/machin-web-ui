@@ -2,14 +2,14 @@
 // current page (ink, not a link). `hrefs` pairs with `labels` ("" for no link).
 
 func ui_breadcrumb(labels, hrefs) (h) {
-    h = "<nav class=\"flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400\">"
+    h = "<nav class=\"flex items-center gap-2 text-sm text-muted dark:text-muted-400\">"
     i := 0
     for _, l := range labels {
-        if i > 0 { h = h + "<span class=\"text-stone-300\">/</span>" }
+        if i > 0 { h = h + "<span class=\"text-muted-300\">/</span>" }
         if i == len(labels) - 1 {
-            h = h + "<span class=\"font-medium text-stone-900 dark:text-stone-100\">" + ui_esc(l) + "</span>"
+            h = h + "<span class=\"font-medium text-ink dark:text-ink-100\">" + ui_esc(l) + "</span>"
         } else if len(hrefs[i]) > 0 {
-            h = h + "<a class=\"hover:text-stone-900 dark:hover:text-stone-100 hover:underline underline-offset-4\" href=\"" + hrefs[i] + "\">" + ui_esc(l) + "</a>"
+            h = h + "<a class=\"hover:text-ink dark:hover:text-ink-100 hover:underline underline-offset-4\" href=\"" + hrefs[i] + "\">" + ui_esc(l) + "</a>"
         } else {
             h = h + "<span>" + ui_esc(l) + "</span>"
         }

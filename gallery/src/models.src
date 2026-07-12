@@ -90,17 +90,17 @@ func gallery_sections() (xs) {
 func chips_init() (xs) { xs = []string{"machin", "wasm", "tailwind", "agent-first"} }
 
 func charts_tile_body() (h) {
-    spark := "<div class=\"text-sky-600\">" + ui_sparkline([]int{3, 5, 2, 8, 6, 9, 4, 7, 10, 8, 12, 9}) + "</div>"
-    spark = "<div><p class=\"mb-1 text-xs font-medium uppercase tracking-wider text-stone-400\">sparkline &middot; commits</p>" + spark + "</div>"
-    bars := "<div class=\"text-stone-900\">" + ui_bars([]int{12, 9, 14, 7, 16, 11, 18}, []string{"mo", "tu", "we", "th", "fr", "sa", "su"}) + "</div>"
-    bars = "<div><p class=\"mb-1 text-xs font-medium uppercase tracking-wider text-stone-400\">bars &middot; builds per day</p>" + bars + "</div>"
-    donuts := "<div class=\"flex items-center gap-6\"><span class=\"text-green-600\">" + ui_donut(91, "tests") + "</span><span class=\"text-stone-900\">" + ui_donut(76, "coverage") + "</span></div>"
+    spark := "<div class=\"text-info-600\">" + ui_sparkline([]int{3, 5, 2, 8, 6, 9, 4, 7, 10, 8, 12, 9}) + "</div>"
+    spark = "<div><p class=\"mb-1 text-xs font-medium uppercase tracking-wider text-muted-400\">sparkline &middot; commits</p>" + spark + "</div>"
+    bars := "<div class=\"text-ink\">" + ui_bars([]int{12, 9, 14, 7, 16, 11, 18}, []string{"mo", "tu", "we", "th", "fr", "sa", "su"}) + "</div>"
+    bars = "<div><p class=\"mb-1 text-xs font-medium uppercase tracking-wider text-muted-400\">bars &middot; builds per day</p>" + bars + "</div>"
+    donuts := "<div class=\"flex items-center gap-6\"><span class=\"text-ok-600\">" + ui_donut(91, "tests") + "</span><span class=\"text-ink\">" + ui_donut(76, "coverage") + "</span></div>"
     heat := []int{}
     i := 0
     while i < 84 { heat = append(heat, (i * 5 + i / 3) % 7 % 5)  i = i + 1 }
-    hm := "<div><p class=\"mb-2 text-xs font-medium uppercase tracking-wider text-stone-400\">heatmap &middot; 12 weeks</p>" + ui_heatmap(heat) + "</div>"
+    hm := "<div><p class=\"mb-2 text-xs font-medium uppercase tracking-wider text-muted-400\">heatmap &middot; 12 weeks</p>" + ui_heatmap(heat) + "</div>"
     h = ui_split(spark + "<div class=\"mt-6\">" + bars + "</div>", "<div class=\"flex flex-col gap-6\">" + donuts + hm + "</div>")
-    h = h + "<p class=\"mt-4 text-xs text-stone-500\">All charts are inline SVG generated in pure MFL — data-driven geometry lives in attributes, colors ride currentColor.</p>"
+    h = h + "<p class=\"mt-4 text-xs text-muted\">All charts are inline SVG generated in pure MFL — data-driven geometry lives in attributes, colors ride currentColor.</p>"
 }
 
 func agent_tile_body() (h) {
@@ -120,9 +120,9 @@ func agent_tile_body() (h) {
         "-", "    return ok_html(page)",
         "+", "    return ok_html(page())",
         " ", "}"})
-    h = ui_split("<p class=\"mb-3 text-xs font-medium uppercase tracking-wider text-stone-400\">chat transcript</p>" + chat,
-        "<div class=\"flex flex-col gap-4\"><p class=\"-mb-2 text-xs font-medium uppercase tracking-wider text-stone-400\">log stream</p>" + logs +
-        "<p class=\"-mb-2 text-xs font-medium uppercase tracking-wider text-stone-400\">diff</p>" + diff + "</div>")
+    h = ui_split("<p class=\"mb-3 text-xs font-medium uppercase tracking-wider text-muted-400\">chat transcript</p>" + chat,
+        "<div class=\"flex flex-col gap-4\"><p class=\"-mb-2 text-xs font-medium uppercase tracking-wider text-muted-400\">log stream</p>" + logs +
+        "<p class=\"-mb-2 text-xs font-medium uppercase tracking-wider text-muted-400\">diff</p>" + diff + "</div>")
 }
 
 func extras_tile_body(slider_val_frag) (h) {
@@ -167,7 +167,10 @@ func gallery_sidebar() (h) {
     for _, l := range labels { hrefs = append(hrefs, section_anchor(l)) }
     h = h + ui_sidebar_group("Components", labels, hrefs, "")
     h = h + ui_sidebar_group("Project", []string{"GitHub", "machin"}, []string{"https://github.com/javimosch/machin-web-ui", "https://github.com/javimosch/machin"}, "")
-    h = h + "<p class=\"text-xs leading-5 text-stone-400\">One static binary: SSR server, wasm client, Tailwind engine. No Node.</p>"
+    h = h + "<p class=\"mb-2 text-xs font-medium uppercase tracking-wider text-muted-400\">Theme</p>"
+    h = h + ui_dropdown("Stone", []string{"Stone", "theme_stone", "Teal", "theme_teal", "Crimson", "theme_crimson"})
+    h = h + "<p class=\"mt-2 mb-6 text-xs leading-5 text-muted-400\">verified theming: each theme is a 4-hex JSON, oracle-diffed against the equivalent tailwind.config</p>"
+    h = h + "<p class=\"text-xs leading-5 text-muted-400\">One static binary: SSR server, wasm client, Tailwind engine. No Node.</p>"
 }
 
 func gallery_hero() (h) {
@@ -186,7 +189,7 @@ func app_view(count_frag, panel_frag, pg_frag, slider_val_frag) (h) {
     counter = counter + ui_button("Reset", "danger", "reset")
     counter = counter + "</div>"
 
-    tabs := ui_tabs("tabs", tab_labels(), "Overview") + "<p class=\"pt-4 text-sm leading-6 text-stone-500\">" + panel_frag + "</p>"
+    tabs := ui_tabs("tabs", tab_labels(), "Overview") + "<p class=\"pt-4 text-sm leading-6 text-muted\">" + panel_frag + "</p>"
 
     badges := "<div class=\"flex flex-wrap items-center gap-2\">"
     badges = badges + ui_badge("neutral", "neutral") + ui_badge("shipped", "green") + ui_badge("beta", "yellow") + ui_badge("breaking", "red") + ui_badge("info", "blue")
@@ -219,14 +222,14 @@ func app_view(count_frag, panel_frag, pg_frag, slider_val_frag) (h) {
 
     fb := "<div class=\"flex flex-col gap-4\">"
     fb = fb + ui_progress(65)
-    fb = fb + "<div class=\"flex items-center gap-3 text-sm text-stone-500\">" + ui_spinner() + "compiling wasm client&hellip;</div>"
+    fb = fb + "<div class=\"flex items-center gap-3 text-sm text-muted\">" + ui_spinner() + "compiling wasm client&hellip;</div>"
     fb = fb + "<div class=\"flex flex-col gap-2\">" + ui_skeleton_bar("w-2/3") + ui_skeleton_bar("w-1/2") + ui_skeleton_bar("w-5/6") + "</div>"
     fb = fb + "</div>"
 
     nav := "<div class=\"flex flex-col gap-4\">"
     nav = nav + ui_breadcrumb([]string{"machin", "web-ui", "gallery"}, []string{"https://github.com/javimosch/machin", "", ""})
     nav = nav + "<div class=\"flex flex-wrap items-center gap-3\">" + ui_pagination(2, 5)
-    nav = nav + "<span class=\"text-sm text-stone-500\">viewing page " + pg_frag + "</span></div>"
+    nav = nav + "<span class=\"text-sm text-muted\">viewing page " + pg_frag + "</span></div>"
     nav = nav + ui_steps([]string{"init", "build", "ship"}, 2)
     nav = nav + "</div>"
 
@@ -237,7 +240,7 @@ func app_view(count_frag, panel_frag, pg_frag, slider_val_frag) (h) {
     prim = prim + ui_dropdown("Actions", []string{"Notify", "notify", "Increment", "bump"})
     prim = prim + ui_popover("What is this?", "A click-toggled popover — native <code>&lt;details&gt;</code>, absolutely positioned panel, zero JS. Close by clicking the trigger again.")
     prim = prim + "</div>"
-    prim = prim + "<div class=\"mt-4 flex flex-col gap-3\"><p class=\"text-sm text-stone-500\">Install " + ui_code("machin-web-ui") + " and scaffold:</p>"
+    prim = prim + "<div class=\"mt-4 flex flex-col gap-3\"><p class=\"text-sm text-muted\">Install " + ui_code("machin-web-ui") + " and scaffold:</p>"
     prim = prim + ui_code_block("terminal", "machin-web-ui init my-app\ncd my-app && ./build.sh\n./app") + "</div>"
 
     tree_demo := ui_tree(ui_tree_node("my-app",
@@ -251,17 +254,17 @@ func app_view(count_frag, panel_frag, pg_frag, slider_val_frag) (h) {
         "verified by", "headless-Chrome E2E + a 3,613-class oracle diff"})
 
     structure := ui_split(
-        "<p class=\"mb-3 text-xs font-medium uppercase tracking-wider text-stone-400\">timeline</p>" + ui_timeline([]string{
+        "<p class=\"mb-3 text-xs font-medium uppercase tracking-wider text-muted-400\">timeline</p>" + ui_timeline([]string{
             "day 1", "engine spike: 1,465 classes oracle-identical",
             "day 2", "scanner, coverage, init, 10 components",
             "day 3", "31 components, gallery on GitHub Pages"}),
-        "<p class=\"mb-3 text-xs font-medium uppercase tracking-wider text-stone-400\">list group</p>" + ui_list_group([]string{
+        "<p class=\"mb-3 text-xs font-medium uppercase tracking-wider text-muted-400\">list group</p>" + ui_list_group([]string{
             "tw engine", "16ms / 3,613 classes",
             "wasm client", "hydrates the SSR page",
             "components", "vendored source you own"}))
     structure = structure + "<div class=\"mt-6\">" + ui_split(
-        "<p class=\"mb-3 text-xs font-medium uppercase tracking-wider text-stone-400\">tree</p>" + tree_demo,
-        "<p class=\"mb-3 text-xs font-medium uppercase tracking-wider text-stone-400\">description list</p>" + details) + "</div>"
+        "<p class=\"mb-3 text-xs font-medium uppercase tracking-wider text-muted-400\">tree</p>" + tree_demo,
+        "<p class=\"mb-3 text-xs font-medium uppercase tracking-wider text-muted-400\">description list</p>" + details) + "</div>"
 
     faq := ui_accordion([]string{
         "Is this really Tailwind?", "The class names and emitted CSS are — every rule is differential-tested against the tailwindcss binary. The engine is 100% MFL.",
@@ -272,7 +275,7 @@ func app_view(count_frag, panel_frag, pg_frag, slider_val_frag) (h) {
     overlays = overlays + ui_button("Open dialog", "ghost", "dlg_open")
     overlays = overlays + ui_button("Open drawer", "ghost", "drw_open")
     overlays = overlays + ui_button("Command palette", "ghost", "palette")
-    overlays = overlays + "<span class=\"text-xs text-stone-500\">or press " + ui_kbd_combo([]string{"ctrl", "K"}) + "</span>"
+    overlays = overlays + "<span class=\"text-xs text-muted\">or press " + ui_kbd_combo([]string{"ctrl", "K"}) + "</span>"
     overlays = overlays + "</div>"
 
     // --- page ---
@@ -293,16 +296,16 @@ func app_view(count_frag, panel_frag, pg_frag, slider_val_frag) (h) {
     grid = grid + tile("sec-structure", true, "Structure", structure)
     grid = grid + tile("sec-accordion", false, "Accordion", faq)
     grid = grid + tile("sec-empty-state", false, "Empty state", ui_empty_state("No deployments yet", "Scaffold an app and ship it — the whole loop is one binary and one command.", ui_button("machin-web-ui init", "ghost", "")))
-    grid = grid + tile("sec-table", false, "Table", demo_table() + "<p class=\"mb-3 mt-6 text-xs font-medium uppercase tracking-wider text-stone-400\">sortable (click a header)</p><div id=\"dtable\">" + tbl_markup(0, true) + "</div>")
+    grid = grid + tile("sec-table", false, "Table", demo_table() + "<p class=\"mb-3 mt-6 text-xs font-medium uppercase tracking-wider text-muted-400\">sortable (click a header)</p><div id=\"dtable\">" + tbl_markup(0, true) + "</div>")
     grid = grid + tile("sec-overlays", false, "Overlays", overlays)
     grid = grid + "</div>"
 
     content := "<div class=\"" + ui_content_classes() + "\">"
-    content = content + ui_banner("top-banner", "58 components and counting &mdash; <span class=\"text-stone-300 dark:text-stone-600\">press ctrl+K for the command palette</span>", "banner_close")
+    content = content + ui_banner("top-banner", "58 components and counting &mdash; <span class=\"text-muted-300 dark:text-muted-600\">press ctrl+K for the command palette</span>", "banner_close")
     content = content + gallery_hero()
     content = content + ui_section_header("Components", "Every tile is live: SSR'd, hydrated, engine-styled.", ui_button("Browse registry", "ghost", "drw_open"))
     content = content + grid
-    content = content + ui_footer("built with <span class=\"font-medium text-stone-900\">machin-web-ui</span> — SSR + wasm hydration + a Tailwind engine, all pure MFL",
+    content = content + ui_footer("built with <span class=\"font-medium text-ink\">machin-web-ui</span> — SSR + wasm hydration + a Tailwind engine, all pure MFL",
         []string{"GitHub", "machin"}, []string{"https://github.com/javimosch/machin-web-ui", "https://github.com/javimosch/machin"})
     content = content + "</div>"
 
@@ -311,7 +314,7 @@ func app_view(count_frag, panel_frag, pg_frag, slider_val_frag) (h) {
     // overlays (top-level, outside the shell flow)
     dlg_actions := ui_button("Cancel", "ghost", "dlg_close") + ui_button("Confirm", "primary", "dlg_close")
     h = h + ui_dialog("dlg", "Delete project?", "This action cannot be undone. The project and its data will be permanently removed.", dlg_actions, false)
-    drw := "<p>The registry, straight from <code class=\"rounded bg-stone-100 px-1 py-0.5\">machin-web-ui list</code>:</p>"
+    drw := "<p>The registry, straight from <code class=\"rounded bg-surface-100 px-1 py-0.5\">machin-web-ui list</code>:</p>"
     drw = drw + "<div class=\"mt-3\">" + ui_list_group([]string{
         "layout + sidebar", "app shells",
         "drawer + dialog + toast", "overlays",

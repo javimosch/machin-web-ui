@@ -2,5 +2,5 @@
 // uses the engine's animate-spin @keyframes).
 
 func ui_spinner() (h) {
-    h = "<span class=\"inline-block h-4 w-4 animate-spin rounded-full border-2 border-stone-300 dark:border-stone-700 border-t-stone-900\"></span>"
+    h = "<span class=\"inline-block h-4 w-4 animate-spin rounded-full border-2 border-line-300 dark:border-line-700 border-t-ink\"></span>"
 }

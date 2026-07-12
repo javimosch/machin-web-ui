@@ -3,10 +3,10 @@
 // `items` alternates question, answer, question, answer, ...
 
 func ui_accordion_item(q, a) (h) {
-    h = "<details class=\"group border-b border-stone-200 dark:border-stone-800 py-3\">"
-    h = h + "<summary class=\"flex cursor-pointer items-center justify-between text-sm font-medium text-stone-900 dark:text-stone-100\">" + ui_esc(q)
-    h = h + "<span class=\"text-stone-400\">+</span></summary>"
-    h = h + "<p class=\"pt-2 text-sm leading-6 text-stone-500 dark:text-stone-400\">" + ui_esc(a) + "</p>"
+    h = "<details class=\"group border-b border-line dark:border-line-800 py-3\">"
+    h = h + "<summary class=\"flex cursor-pointer items-center justify-between text-sm font-medium text-ink dark:text-ink-100\">" + ui_esc(q)
+    h = h + "<span class=\"text-muted-400\">+</span></summary>"
+    h = h + "<p class=\"pt-2 text-sm leading-6 text-muted dark:text-muted-400\">" + ui_esc(a) + "</p>"
     h = h + "</details>"
 }
 

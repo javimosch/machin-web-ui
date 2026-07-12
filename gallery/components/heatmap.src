@@ -3,11 +3,11 @@
 // scanner always sees them).
 
 func ui_heat_tint(level) (c) {
-    c = "bg-stone-100 dark:bg-stone-800"
-    if level == 1 { c = "bg-green-100" }
-    if level == 2 { c = "bg-green-300" }
-    if level == 3 { c = "bg-green-500" }
-    if level >= 4 { c = "bg-green-700" }
+    c = "bg-surface-100 dark:bg-surface-800"
+    if level == 1 { c = "bg-ok-100" }
+    if level == 2 { c = "bg-ok-300" }
+    if level == 3 { c = "bg-ok-500" }
+    if level >= 4 { c = "bg-ok-700" }
 }
 
 // values: one intensity per day, laid out top-to-bottom then next column

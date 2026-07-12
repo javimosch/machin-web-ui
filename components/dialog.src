@@ -5,10 +5,10 @@
 func ui_dialog(id, title, body, actions, open) (h) {
     vis := " hidden"
     if open { vis = "" }
-    h = "<div id=\"" + id + "\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 p-4" + vis + "\">"
-    h = h + "<div class=\"w-full max-w-md rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-6\">"
+    h = "<div id=\"" + id + "\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" + vis + "\">"
+    h = h + "<div class=\"w-full max-w-md rounded-lg border border-line dark:border-line-800 bg-surface dark:bg-surface-900 p-6\">"
     h = h + "<h3 class=\"text-lg font-semibold tracking-tight\">" + ui_esc(title) + "</h3>"
-    h = h + "<div class=\"mt-2 text-sm leading-6 text-stone-500 dark:text-stone-400\">" + body + "</div>"
+    h = h + "<div class=\"mt-2 text-sm leading-6 text-muted dark:text-muted-400\">" + body + "</div>"
     h = h + "<div class=\"mt-5 flex justify-end gap-2\">" + actions + "</div>"
     h = h + "</div></div>"
 }

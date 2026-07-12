@@ -5,7 +5,7 @@
 // ui_tr/ui_td from table.src.
 
 func ui_data_table(headers, rows, sort_col, sort_asc, action) (h) {
-    h = "<table class=\"w-full text-left text-sm\"><thead><tr class=\"border-b border-stone-200 dark:border-stone-800\">"
+    h = "<table class=\"w-full text-left text-sm\"><thead><tr class=\"border-b border-line dark:border-line-800\">"
     i := 0
     for _, hd := range headers {
         arrow := ""
@@ -13,7 +13,7 @@ func ui_data_table(headers, rows, sort_col, sort_asc, action) (h) {
             arrow = " &darr;"
             if sort_asc { arrow = " &uarr;" }
         }
-        h = h + "<th class=\"py-0 pr-4\"><button class=\"py-2 text-xs font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400 transition hover:text-stone-900 dark:hover:text-stone-100\" data-action=\"" + action + "\" data-arg=\"" + str(i) + "\">" + ui_esc(hd) + arrow + "</button></th>"
+        h = h + "<th class=\"py-0 pr-4\"><button class=\"py-2 text-xs font-medium uppercase tracking-wider text-muted dark:text-muted-400 transition hover:text-ink dark:hover:text-ink-100\" data-action=\"" + action + "\" data-arg=\"" + str(i) + "\">" + ui_esc(hd) + arrow + "</button></th>"
         i = i + 1
     }
     h = h + "</tr></thead><tbody>"

@@ -27,7 +27,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   r.panel0 = (await ev(`document.querySelector('[data-s="panel"]').textContent`)).slice(0, 30);
   await ev(`document.querySelectorAll('#tabs [data-action="tab"]')[1].click()`); await sleep(120);
   r.panel1 = (await ev(`document.querySelector('[data-s="panel"]').textContent`)).slice(0, 30);
-  r.tab1Active = await ev(`document.querySelectorAll('#tabs button')[1].className.includes('border-stone-900')`);
+  r.tab1Active = await ev(`document.querySelectorAll('#tabs button')[1].className.includes('border-ink')`);
   r.tab0Idle = await ev(`document.querySelectorAll('#tabs button')[0].className.includes('border-transparent')`);
 
   r.dlgHidden = await ev(`document.getElementById('dlg').classList.contains('hidden')`);
@@ -48,8 +48,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await ev(`document.querySelector('#cal [data-action="cal_pick"][data-arg="20260803"]').click()`); await sleep(80);
   await ev(`document.querySelector('#cal [data-action="cal_pick"][data-arg="20260812"]').click()`); await sleep(80);
   r.calRange = await ev(`document.querySelector('#cal p').textContent`);
-  r.calInked = await ev(`document.querySelector('#cal [data-arg="20260812"]').className.includes('bg-stone-900')`);
-  r.calWashed = await ev(`document.querySelector('#cal [data-arg="20260807"]').className.includes('bg-stone-100')`);
+  r.calInked = await ev(`document.querySelector('#cal [data-arg="20260812"]').className.includes('bg-ink')`);
+  r.calWashed = await ev(`document.querySelector('#cal [data-arg="20260807"]').className.includes('bg-surface-100')`);
 
   // command palette: button toggle, filter, action, escape
   r.palHidden = await ev(`document.getElementById('pal').classList.contains('hidden')`);
@@ -69,7 +69,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   // rating re-render
   await ev(`document.querySelector('#rating [data-arg="5"]').click()`); await sleep(100);
-  r.stars5 = await ev(`[...document.querySelectorAll('#rating [data-action="rate"]')].filter(el => el.className.includes('text-amber-500')).length`);
+  r.stars5 = await ev(`[...document.querySelectorAll('#rating [data-action="rate"]')].filter(el => el.className.includes('text-warn-500')).length`);
 
   // chips removal
   r.chips0 = await ev(`document.querySelectorAll('#chips [data-action="chip_del"]').length`);
@@ -106,6 +106,15 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await ev(`document.querySelector('#dtable [data-action="sort_by"][data-arg="2"]').click()`); await sleep(100);
   r.sortNumDesc = await ev(`document.querySelector('#dtable tbody tr td').textContent`);
   r.errors = errs;
+  // theme switcher: pre-generated stylesheets swapped by the host
+  await ev(`[...document.querySelectorAll('[data-action="theme_teal"]')][0].click()`); await sleep(150);
+  r.tealBtn = await ev(`getComputedStyle(document.querySelector('[data-action="bump"]')).backgroundColor`);
+  await ev(`[...document.querySelectorAll('[data-action="theme_crimson"]')][0].click()`); await sleep(400);
+  r.crimsonBtn = await ev(`getComputedStyle(document.querySelector('[data-action="bump"]')).backgroundColor`);
+  r.crimsonRadius = await ev(`getComputedStyle(document.querySelector('[data-action="bump"]')).borderRadius`);
+  await ev(`[...document.querySelectorAll('[data-action="theme_stone"]')][0].click()`); await sleep(150);
+  r.stoneBtn = await ev(`getComputedStyle(document.querySelector('[data-action="bump"]')).backgroundColor`);
+
   // dark mode (class strategy): the switch toggles .dark on <html>
   r.lightStart = await ev(`!document.documentElement.classList.contains('dark')`);
   await ev(`document.querySelector('[data-action="theme"]').click()`); await sleep(120);
@@ -127,6 +136,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     r.toasts3 === 3 && r.toasts2 === 2 && r.toasts0 === 0 &&
     r.comboOpen && r.comboFiltered === 1 && r.comboValue.includes('Frankfurt') && r.comboClosed &&
     r.sortFirst0 === 'crmd' && r.sortNumAsc === 'hart' && r.sortNumDesc === 'grepapi' &&
+    r.tealBtn === 'rgb(19, 78, 74)' && r.crimsonBtn === 'rgb(76, 5, 25)' && r.crimsonRadius === '8px' &&
+    r.stoneBtn === 'rgb(28, 25, 23)' &&
     r.lightStart && r.darkOn && r.darkBody === 'rgb(12, 10, 9)' && r.darkCard === 'rgb(28, 25, 23)' && r.darkSwitchChecked && r.lightAgain && errs.length===0;
   console.log(pass ? 'GALLERY E2E PASS' : 'GALLERY E2E FAIL'); process.exit(pass?0:1);
 })().catch(e=>{console.error(e);chrome.kill();process.exit(1)});

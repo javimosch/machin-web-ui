@@ -12,8 +12,8 @@ func ui_switch(name, label, on, action) (h) {
     // the action rides the INPUT: a label click forwards one synthetic click
     // to it (data-action on the label would fire twice per toggle)
     h = h + "<input type=\"checkbox\" name=\"" + name + "\" class=\"peer sr-only\"" + ck + act + ">"
-    h = h + "<span class=\"h-5 w-9 rounded-full bg-stone-300 dark:bg-stone-600 transition peer-checked:bg-stone-900 dark:peer-checked:bg-stone-100\"></span>"
-    h = h + "<span class=\"absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white dark:bg-stone-900 transition peer-checked:translate-x-4\"></span>"
-    h = h + "<span class=\"text-sm text-stone-900 dark:text-stone-100\">" + ui_esc(label) + "</span>"
+    h = h + "<span class=\"h-5 w-9 rounded-full bg-muted-300 dark:bg-muted-600 transition peer-checked:bg-ink dark:peer-checked:bg-ink-100\"></span>"
+    h = h + "<span class=\"absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-surface dark:bg-surface-900 transition peer-checked:translate-x-4\"></span>"
+    h = h + "<span class=\"text-sm text-ink dark:text-ink-100\">" + ui_esc(label) + "</span>"
     h = h + "</label>"
 }
