@@ -826,8 +826,18 @@ func tw_rule(cls, c, kf_done) (css, ok) {
 // dark_class: darkMode 'class' — dark: variants target .dark ancestors
 // (:is(.dark *)) instead of the prefers-color-scheme media query.
 func tw_css_mode(classes, warn, dark_class) (out) {
+    out = tw_css_themed(classes, warn, dark_class, "")
+}
+
+// themejson: a theme.json string ("" for the built-in stone look) — semantic
+// token ramps are registered as custom named colors before resolution.
+func tw_css_themed(classes, warn, dark_class, themejson) (out) {
     c := tw_ctx()
     c.dc = dark_class
+    if len(themejson) > 0 {
+        bad := theme_apply(c, themejson)
+        if len(bad) > 0 { out = "/* tw-theme-invalid: " + bad + " */\n"  return }
+    }
     kf_done := make(map[string]bool)
     seen := make(map[string]bool)
     unknown := []string{}

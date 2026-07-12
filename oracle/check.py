@@ -5,7 +5,7 @@ Generates a corpus of classes across the spike's utility families, runs both
 engines, normalizes each stylesheet into a set of
 (media-conditions, selector, declarations) triples, and diffs them.
 """
-import re, subprocess, sys, itertools, pathlib
+import json, re, subprocess, sys, itertools, pathlib
 from families import static_gen, param_corpus
 
 HERE = pathlib.Path(__file__).parent
@@ -168,6 +168,43 @@ def main():
     r = subprocess.run([str(binary), "css", "--no-preflight", "--dark-class", "-"], input="\n".join(classes),
                        capture_output=True, text=True, check=True)
     ok &= diff("corpus darkMode:class", oracle_class, normalize2(r.stdout))
+
+    # 1c. VERIFIED THEMING: a theme.json's semantic ramps must compile exactly
+    # as the equivalent tailwind.config.js custom colors would
+    themes = {
+        "default": {},
+        "teal": {"accent": "#0d9488", "ink": "#134e4a", "canvas": "#f0fdfa"},
+        "hostile": {"accent": "#ff0000", "ink": "#010203", "muted": "#fefefe",
+                    "line": "#7f7f7f", "warn": "#8800ff"},
+    }
+    theme_ok = True
+    tnames = "canvas surface ink muted line accent ok warn danger info".split()
+    for tname, overrides in themes.items():
+        # start from the binary's own default theme, apply overrides
+        subprocess.run([str(binary), "theme", "init"], cwd=HERE, capture_output=True, check=True)
+        theme = json.loads((HERE / "theme.json").read_text())
+        theme.update(overrides)
+        (HERE / "theme.json").write_text(json.dumps(theme))
+        resolved = json.loads(subprocess.run([str(binary), "theme", "check", str(HERE / "theme.json")],
+                                             capture_output=True, text=True, check=True).stdout)
+        (HERE / "tailwind.theme.config.js").write_text(
+            "module.exports = { content: [\"./content.html\"], corePlugins: { preflight: false },\n"
+            "  theme: { extend: { colors: " + json.dumps(resolved) + " } } }\n")
+        tcls = []
+        shades = ["", "-50", "-200", "-500", "-700", "-950"]
+        for n in tnames:
+            for sh in shades:
+                tcls += [f"bg-{n}{sh}", f"text-{n}{sh}", f"border-{n}{sh}"]
+            tcls += [f"ring-{n}-500", f"ring-{n}", f"divide-{n}-200", f"from-{n}-400", f"via-{n}-500",
+                     f"to-{n}", f"outline-{n}-600", f"ring-offset-{n}-100", f"decoration-{n}-500",
+                     f"bg-{n}-500/40", f"bg-{n}/75", f"border-l-{n}-600",
+                     f"dark:bg-{n}-950", f"hover:bg-{n}-700", f"md:text-{n}-500"]
+        (HERE / "content.html").write_text('<i class="' + " ".join(tcls) + '"></i>')
+        ocss = run_oracle(None, config="tailwind.theme.config.js", out="oracle_theme.css")
+        r = subprocess.run([str(binary), "css", "--no-preflight", "--theme", str(HERE / "theme.json"), "-"],
+                           input="\n".join(tcls), capture_output=True, text=True, check=True)
+        theme_ok &= diff(f"theme '{tname}' ({len(tcls)} classes)", normalize2(ocss), normalize2(r.stdout))
+    ok &= theme_ok
 
     # 2. scanner: both engines scan the same MFL fixture file
     (HERE / "tailwind.fixture.config.js").write_text(

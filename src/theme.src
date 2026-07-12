@@ -1,0 +1,222 @@
+// theme.src — VERIFIED THEMING (M0: colors). A theme.json maps the FIXED
+// semantic token set to one hex each; the engine expands every token into a
+// Tailwind-style 50..950 ramp (HSL lightness ladder, hue/saturation kept) and
+// registers the ramp as custom named colors — so `bg-accent-600`,
+// `ring-accent-500/40`, `from-accent-300`, `dark:border-line-800` all work
+// through the normal machinery. The given hex is the DEFAULT shade
+// (`bg-accent`). Verified like everything else: the harness feeds the same
+// ramps to real tailwindcss as a tailwind.config.js and diffs rule-for-rule.
+//
+// Token set (fixed by design — components speak these names):
+//   canvas surface ink muted line accent   +   ok warn danger info
+//
+// theme.json (flat, agent-writable; radius/fontSans/fontMono parsed but M1):
+//   {"canvas":"#fafaf9","surface":"#ffffff","ink":"#1c1917","muted":"#78716c",
+//    "line":"#e7e5e4","accent":"#0d9488","ok":"#16a34a","warn":"#d97706",
+//    "danger":"#dc2626","info":"#0284c7"}
+
+type Theme struct {
+    canvas string
+    surface string
+    ink string
+    muted string
+    line string
+    accent string
+    ok string
+    warn string
+    danger string
+    info string
+    radius string
+    fontSans string
+    fontMono string
+}
+
+func theme_token_names() (xs) {
+    xs = []string{"canvas", "surface", "ink", "muted", "line", "accent", "ok", "warn", "danger", "info"}
+}
+
+func theme_token_value(t, name) (v) {
+    if name == "canvas" { v = t.canvas }
+    if name == "surface" { v = t.surface }
+    if name == "ink" { v = t.ink }
+    if name == "muted" { v = t.muted }
+    if name == "line" { v = t.line }
+    if name == "accent" { v = t.accent }
+    if name == "ok" { v = t.ok }
+    if name == "warn" { v = t.warn }
+    if name == "danger" { v = t.danger }
+    if name == "info" { v = t.info }
+}
+
+// the default theme: today's stone look, as explicit hexes
+func theme_default() (t) {
+    t = Theme{canvas: "#fafaf9", surface: "#ffffff", ink: "#1c1917", muted: "#78716c", line: "#e7e5e4", accent: "#1c1917", ok: "#16a34a", warn: "#d97706", danger: "#dc2626", info: "#0284c7", radius: "", fontSans: "", fontMono: ""}
+}
+
+// --- hex <-> rgb ---
+func hexval(c) (v) { v = index("0123456789abcdef", to_lower(c)) }
+
+func hex2(n) (s) {
+    hx := "0123456789abcdef"
+    s = charat(hx, n / 16) + charat(hx, n % 16)
+}
+
+// "#0af" / "#00aaff" -> (r, g, b, ok)
+func theme_hex_rgb(hx) (r, g, b, ok) {
+    h := hx
+    if has_prefix(h, "#") { h = substr(h, 1, len(h)) }
+    if len(h) == 3 { h = charat(h, 0) + charat(h, 0) + charat(h, 1) + charat(h, 1) + charat(h, 2) + charat(h, 2) }
+    if len(h) != 6 { ok = false  return }
+    ok = true
+    i := 0
+    vals := []int{0, 0, 0}
+    while i < 3 {
+        hi := hexval(charat(h, i * 2))
+        lo := hexval(charat(h, i * 2 + 1))
+        if hi < 0 || lo < 0 { ok = false  return }
+        vals[i] = hi * 16 + lo
+        i = i + 1
+    }
+    r = vals[0]
+    g = vals[1]
+    b = vals[2]
+}
+
+// --- rgb <-> hsl (0..1 floats) ---
+func fmax3(a, b, c) (m) {
+    m = a
+    if b > m { m = b }
+    if c > m { m = c }
+}
+
+func fmin3(a, b, c) (m) {
+    m = a
+    if b < m { m = b }
+    if c < m { m = c }
+}
+
+func theme_rgb_hsl(ri, gi, bi) (h, s, l) {
+    r := float(ri) / 255.0
+    g := float(gi) / 255.0
+    b := float(bi) / 255.0
+    mx := fmax3(r, g, b)
+    mn := fmin3(r, g, b)
+    l = (mx + mn) / 2.0
+    d := mx - mn
+    h = 0.0
+    s = 0.0
+    if d > 0.0001 {
+        if l > 0.5 { s = d / (2.0 - mx - mn) } else { s = d / (mx + mn) }
+        if mx == r { h = (g - b) / d  if g < b { h = h + 6.0 } }
+        if mx == g { h = (b - r) / d + 2.0 }
+        if mx == b { h = (r - g) / d + 4.0 }
+        h = h / 6.0
+    }
+}
+
+func hue_chan(p, q, tt) (v) {
+    t := tt
+    if t < 0.0 { t = t + 1.0 }
+    if t > 1.0 { t = t - 1.0 }
+    if t < 0.16666667 { v = p + (q - p) * 6.0 * t  return }
+    if t < 0.5 { v = q  return }
+    if t < 0.66666667 { v = p + (q - p) * (0.66666667 - t) * 6.0  return }
+    v = p
+}
+
+func theme_hsl_rgb(h, s, l) (ri, gi, bi) {
+    if s < 0.0001 {
+        v := int(round(l * 255.0))
+        ri = v
+        gi = v
+        bi = v
+        return
+    }
+    q := l + s - l * s
+    if l < 0.5 { q = l * (1.0 + s) }
+    p := 2.0 * l - q
+    ri = int(round(hue_chan(p, q, h + 0.33333333) * 255.0))
+    gi = int(round(hue_chan(p, q, h) * 255.0))
+    bi = int(round(hue_chan(p, q, h - 0.33333333) * 255.0))
+}
+
+// --- the ramp: 50..950 as a fixed lightness ladder, hue/sat from the hex ---
+func theme_shade_keys() (xs) {
+    xs = []string{"50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"}
+}
+
+func theme_shade_lightness(i) (l) {
+    ls := []float{0.97, 0.93, 0.86, 0.77, 0.66, 0.56, 0.47, 0.39, 0.30, 0.22, 0.14}
+    l = ls[i]
+}
+
+// ramp returns parallel slices (shade key, "#rrggbb") for a base hex; the
+// DEFAULT (the exact given hex) is handled by the caller.
+func theme_ramp(basehex) (keys, hexes, ok) {
+    r, g, b, hok := theme_hex_rgb(basehex)
+    if hok == false { ok = false  return }
+    ok = true
+    h, s, l := theme_rgb_hsl(r, g, b)
+    l = l * 1.0   // base lightness unused: the ladder is absolute, so ramps are predictable
+    keys = theme_shade_keys()
+    hexes = []string{}
+    i := 0
+    while i < len(keys) {
+        rr, gg, bb := theme_hsl_rgb(h, s, theme_shade_lightness(i))
+        hexes = append(hexes, "#" + hex2(rr) + hex2(gg) + hex2(bb))
+        i = i + 1
+    }
+}
+
+// register one named color (DEFAULT + ramp) into the engine's palette maps.
+// pal wants "R G B" triplets, hex wants "#rrggbb" (gradients/outline/ring-offset).
+func theme_register(pal, hexm, name, basehex) (ok) {
+    r, g, b, hok := theme_hex_rgb(basehex)
+    if hok == false { ok = false  return }
+    pal[name] = str(r) + " " + str(g) + " " + str(b)
+    hexm[name] = "#" + hex2(r) + hex2(g) + hex2(b)
+    keys, hexes, rok := theme_ramp(basehex)
+    if rok == false { ok = false  return }
+    i := 0
+    while i < len(keys) {
+        rr, gg, bb, _ := theme_hex_rgb(hexes[i])
+        pal[name + "-" + keys[i]] = str(rr) + " " + str(gg) + " " + str(bb)
+        hexm[name + "-" + keys[i]] = hexes[i]
+        i = i + 1
+    }
+    ok = true
+}
+
+// apply a theme.json string to a ctx (mutates its palette maps in place).
+// Returns the names that failed to parse ("" = all good).
+func theme_apply(c, themejson) (bad) {
+    t := parse(themejson, Theme{})
+    bad = ""
+    for _, name := range theme_token_names() {
+        v := theme_token_value(t, name)
+        if len(v) == 0 { continue }
+        if theme_register(c.pal, c.hex, name, v) == false { bad = bad + " " + name }
+    }
+    bad = trim(bad)
+}
+
+// resolved theme as JSON (for `theme check` and the oracle harness)
+func theme_resolved_json(themejson) (out) {
+    t := parse(themejson, Theme{})
+    items := []string{}
+    for _, name := range theme_token_names() {
+        v := theme_token_value(t, name)
+        if len(v) == 0 { continue }
+        keys, hexes, ok := theme_ramp(v)
+        if ok == false { continue }
+        r, g, b, _ := theme_hex_rgb(v)
+        sh := "\"DEFAULT\": \"#" + hex2(r) + hex2(g) + hex2(b) + "\""
+        i := 0
+        while i < len(keys) {
+            sh = sh + ", \"" + keys[i] + "\": \"" + hexes[i] + "\""
+            i = i + 1
+        }
+        items = append(items, "  \"" + name + "\": {" + sh + "}")
+    }
+    out = "{\n" + join(items, ",\n") + "\n}"
+}
