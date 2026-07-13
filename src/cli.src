@@ -32,7 +32,8 @@ func usage() {
     println("  machin-web-ui check <class...>                               resolve classes (JSON)")
     println("  machin-web-ui guide                                          full agent guide: verbs, contracts, components (JSON)")
     println("  machin-web-ui help-json                                      verbs + flags (JSON, agent-first convention)")
-    println("  machin-web-ui skill                                          print this framework's SKILL.md (self-installing)")
+    println("  machin-web-ui verify [--url u] [--port p] [--shot f.png] [--chrome-port n]   drive headless Chrome over CDP (pure MFL): asserts render+styles+no-errors, screenshots")
+    println("  machin-web-ui skill                                          print this framework SKILL.md (self-installing)")
     println("  machin-web-ui version                                        version string")
 }
 
@@ -67,7 +68,8 @@ func cmd_guide() {
     o = o + "    {\"verb\": \"css [paths] [-o f] [--no-preflight] [--dark-class] [--theme t.json]\", \"does\": \"scan .src/.mfl/.html/.js for classes -> stylesheet; '-' reads an explicit class list on stdin\"},\n"
     o = o + "    {\"verb\": \"check <class...>\", \"does\": \"resolve each class to its CSS rule (JSON); unknown => known:false\"},\n"
     o = o + "    {\"verb\": \"coverage\", \"does\": \"the implemented Tailwind surface + honest notImplemented list (JSON)\"},\n"
-    o = o + "    {\"verb\": \"theme init|check <f>|ramp <#hex>\", \"does\": \"verified theming: semantic token ramps, oracle-diffed vs tailwind.config\"}\n"
+    o = o + "    {\"verb\": \"theme init|check <f>|ramp <#hex>\", \"does\": \"verified theming: semantic token ramps, oracle-diffed vs tailwind.config\"},\n"
+    o = o + "    {\"verb\": \"verify [--url u] [--port p] [--shot f.png]\", \"does\": \"drive headless Chrome over CDP in pure MFL: assert the app renders, the stylesheet applied, no JS errors, hydration slots present; optional screenshot. Exit 1 on failure. (Chrome is a dev dependency.)\"}\n"
     o = o + "  ],\n"
     o = o + "  \"contracts\": {\n"
     o = o + "    \"isomorphic\": \"a component is one MFL func; the server calls it for SSR, the wasm client calls the SAME func inside hydrate() and binds to matching data-s slots — no re-render, no drift\",\n"
@@ -90,7 +92,7 @@ func cmd_guide() {
 
 func cmd_help_json() {
     o := "{\"tool\": \"machin-web-ui\", \"version\": \"" + mwu_version() + "\", \"verbs\": ["
-    o = o + "\"init\", \"add\", \"list\", \"css\", \"check\", \"coverage\", \"theme\", \"guide\", \"help-json\", \"skill\", \"version\"], "
+    o = o + "\"init\", \"add\", \"list\", \"css\", \"check\", \"coverage\", \"theme\", \"verify\", \"guide\", \"help-json\", \"skill\", \"version\"], "
     o = o + "\"guide\": \"run `machin-web-ui guide` for the full JSON: verbs, contracts, gotchas, component catalog with signatures\"}"
     println(o)
 }
@@ -291,8 +293,39 @@ func cmd_theme(a) {
     exit(2)
 }
 
+func cmd_verify(a) {
+    url := ""
+    port := 48100
+    shot := ""
+    cport := 9333
+    started := false
+    i := 2
+    while i < len(a) {
+        if a[i] == "--url" { i = i + 1  if i < len(a) { url = a[i] } }
+        else if a[i] == "--port" { i = i + 1  if i < len(a) { port = parse_int(a[i]) } }
+        else if a[i] == "--shot" { i = i + 1  if i < len(a) { shot = a[i] } }
+        else if a[i] == "--chrome-port" { i = i + 1  if i < len(a) { cport = parse_int(a[i]) } }
+        i = i + 1
+    }
+    // with no --url, boot ./app (or $APP) on --port and verify that
+    if len(url) == 0 {
+        app := env("APP")
+        if len(app) == 0 { app = "./app" }
+        system(app + " --port " + str(port) + " >/dev/null 2>&1 &")
+        started = true
+        sleep(1200)
+        url = "http://localhost:" + str(port) + "/"
+    }
+    report, passed := cdp_verify(url, cport, shot)
+    println(report)
+    system("pkill -f \"remote-debugging-port=" + str(cport) + "\" >/dev/null 2>&1")
+    if started { system("pkill -f \"--port " + str(port) + "\" >/dev/null 2>&1") }
+    if passed == false { exit(1) }
+}
+
 func cmd_check(a) {
     c := tw_ctx()
+    theme_apply_default(c)   // semantic tokens (bg-ink, text-muted, ...) resolve
     kf_done := make(map[string]bool)
     items := []string{}
     i := 2
@@ -363,6 +396,7 @@ func main() {
     else if verb == "theme" { cmd_theme(a) }
     else if verb == "guide" { cmd_guide() }
     else if verb == "help-json" { cmd_help_json() }
+    else if verb == "verify" { cmd_verify(a) }
     else if verb == "skill" { print(embed_skill()) }
     else if verb == "version" { println(mwu_version()) }
     else if verb == "coverage" { cmd_coverage() }

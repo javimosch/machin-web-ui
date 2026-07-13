@@ -14,6 +14,7 @@ cd my-app && ./build.sh          # css scan -> asset embed -> wasm -> native bin
 machin-web-ui list               # more components -> machin-web-ui add <name...>
 machin-web-ui check md:bg-ink    # does a class resolve? to what CSS?
 machin-web-ui coverage           # what's implemented — and what is NOT
+machin-web-ui verify             # drive headless Chrome (CDP, pure MFL): render+styles+no-errors, screenshot
 ```
 
 `build.sh` needs `machin`, `zig`, and `machin-web-ui` on `PATH` (or

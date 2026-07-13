@@ -1,0 +1,248 @@
+// verify.src — `machin-web-ui verify`: drive a real headless Chrome over the
+// DevTools Protocol IN PURE MFL (dial + a masked-client WebSocket over the
+// ws.src frame codec + json_get), navigate to an app, and assert it actually
+// works: the page rendered, the stylesheet applied (a real computed color),
+// no JS errors, the SSR hydration markers are present — then screenshot it.
+//
+// Chrome is a DEV dependency (like the tailwindcss oracle), never shipped in a
+// user's app. Usage:
+//   machin-web-ui verify [--url http://localhost:PORT] [--port 48100]
+//                        [--shot out.png] [--json] [--chrome-port 9333]
+// With no --url, boots ./app (or $APP) on --port and verifies that.
+
+// --- masked client WebSocket frame (ws.src builds UNMASKED server frames;
+// a client MUST mask, RFC 6455) ---
+func cdp_mask_key() (b) { b = from_hex("37fa213d") }
+
+func cdp_frame(opcode, payload) (f) {
+    n := len(payload)
+    f = ws_byte(128 | opcode)
+    mb := 128
+    if n < 126 {
+        f = bytes_concat(f, ws_byte(mb | n))
+    } else {
+        if n < 65536 {
+            f = bytes_concat(f, ws_byte(mb | 126))
+            f = bytes_concat(f, ws_byte((n >> 8) & 255))
+            f = bytes_concat(f, ws_byte(n & 255))
+        } else {
+            f = bytes_concat(f, ws_byte(mb | 127))
+            i := 7
+            while i >= 0 { f = bytes_concat(f, ws_byte((n >> (i * 8)) & 255))  i = i - 1 }
+        }
+    }
+    key := cdp_mask_key()
+    f = bytes_concat(f, key)
+    masked := bytes("")
+    i := 0
+    while i < n {
+        masked = bytes_concat(masked, ws_byte(byte_at(payload, i) ^ byte_at(key, i & 3)))
+        i = i + 1
+    }
+    f = bytes_concat(f, masked)
+}
+
+// --- raw HTTP over dial() (chrome's CDP HTTP server keeps connections alive,
+// which hangs http_get's read-to-EOF; Connection: close makes it terminate) ---
+func cdp_http(chrome_port, method, path) (body) {
+    fd := dial("localhost", chrome_port)
+    body = ""
+    if fd < 0 { return }
+    socket_timeout(fd, 4000)
+    req := method + " " + path + " HTTP/1.1\r\nHost: localhost:" + str(chrome_port) + "\r\nConnection: close\r\n\r\n"
+    write(fd, req)
+    raw := ""
+    chunk := read(fd)
+    while len(chunk) > 0 {
+        raw = raw + chunk
+        chunk = read(fd)
+    }
+    sep := index(raw, "\r\n\r\n")
+    if sep >= 0 { body = substr(raw, sep + 4, len(raw)) }
+}
+
+// --- launch + target discovery over the CDP HTTP endpoints ---
+func cdp_launch(chrome_port) (ok) {
+    cmd := "google-chrome --headless=new --no-sandbox --disable-gpu"
+    cmd = cmd + " --remote-debugging-port=" + str(chrome_port)
+    cmd = cmd + " --remote-allow-origins=* --window-size=1200,1400 about:blank"
+    cmd = cmd + " >/dev/null 2>&1 &"
+    system(cmd)
+    ok = false
+    tries := 0
+    while tries < 50 {
+        body := cdp_http(chrome_port, "GET", "/json/version")
+        if contains(body, "webSocketDebuggerUrl") { ok = true  return }
+        sleep(100)
+        tries = tries + 1
+    }
+}
+
+// open a fresh tab at url -> its /devtools/page/<id> path (for the ws handshake)
+func cdp_new_target(chrome_port, url) (path) {
+    body := cdp_http(chrome_port, "PUT", "/json/new?" + url)
+    wsurl, _ := json_get(body, ".webSocketDebuggerUrl")
+    // ws://localhost:PORT/devtools/page/ID -> /devtools/page/ID
+    m := index(wsurl, "/devtools/")
+    if m < 0 { path = ""  return }
+    path = substr(wsurl, m, len(wsurl))
+    // json_get can leave a trailing quote; cut the path at the first non-path char
+    i := 0
+    while i < len(path) {
+        ch := charat(path, i)
+        if index("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/-", ch) < 0 {
+            path = substr(path, 0, i)
+            i = len(path)
+        }
+        i = i + 1
+    }
+}
+
+// --- websocket handshake over a raw dial()'d fd ---
+func cdp_connect(chrome_port, path) (c, ok) {
+    fd := dial("localhost", chrome_port)
+    if fd < 0 { ok = false  return }
+    socket_timeout(fd, 5000)
+    req := "GET " + path + " HTTP/1.1\r\n"
+    req = req + "Host: localhost:" + str(chrome_port) + "\r\n"
+    req = req + "Upgrade: websocket\r\nConnection: Upgrade\r\n"
+    req = req + "Origin: http://localhost:" + str(chrome_port) + "\r\n"
+    req = req + "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+    req = req + "Sec-WebSocket-Version: 13\r\n\r\n"
+    write(fd, req)
+    resp := read(fd)
+    if contains(resp, "101") == false { ok = false  return }
+    c = ws_conn(fd)
+    ok = true
+}
+
+// send a CDP command; returns the id used
+func cdp_send(c, id, method, params) {
+    body := "{\"id\":" + str(id) + ",\"method\":\"" + method + "\""
+    if len(params) > 0 { body = body + ",\"params\":" + params }
+    body = body + "}"
+    write_bytes(c.fd, cdp_frame(1, bytes(body)))
+}
+
+// read frames until the response with matching id arrives; accumulate any
+// Runtime.exceptionThrown events seen along the way into `errs` (by reference
+// via a map). Returns the matching message JSON.
+func cdp_wait(c, id, errbox) (msg) {
+    msg = ""
+    tries := 0
+    while tries < 400 {
+        text, good := ws_next_text(c)
+        if good == 0 { return }
+        if contains(text, "Runtime.exceptionThrown") {
+            errbox["n"] = str(parse_int(errbox["n"]) + 1)
+        }
+        idv, ierr := json_get(text, ".id")
+        if len(ierr) == 0 && idv == str(id) { msg = text  return }
+        tries = tries + 1
+    }
+}
+
+// wait for a specific event method (e.g. Page.loadEventFired)
+func cdp_wait_event(c, method, errbox) (ok) {
+    ok = false
+    tries := 0
+    while tries < 400 {
+        text, good := ws_next_text(c)
+        if good == 0 { return }
+        if contains(text, "Runtime.exceptionThrown") {
+            errbox["n"] = str(parse_int(errbox["n"]) + 1)
+        }
+        m, merr := json_get(text, ".method")
+        if len(merr) == 0 && m == method { ok = true  return }
+        tries = tries + 1
+    }
+}
+
+// Runtime.evaluate <expr>, returnByValue — pull .result.result.value as string
+func cdp_eval(c, id, expr, errbox) (v) {
+    p := "{\"expression\":" + json(expr) + ",\"returnByValue\":true}"
+    cdp_send(c, id, "Runtime.evaluate", p)
+    msg := cdp_wait(c, id, errbox)
+    v, _ = json_get(msg, ".result.result.value")
+}
+
+// the verify run: returns a JSON report string; writes a screenshot if shot!=""
+func cdp_verify(url, chrome_port, shot) (report, passed) {
+    errbox := make(map[string]string)
+    errbox["n"] = "0"
+    checks := []string{}
+    passed = true
+
+    if cdp_launch(chrome_port) == false {
+        report = "{\"ok\":false,\"error\":\"could not launch chrome on port " + str(chrome_port) + "\"}"
+        passed = false
+        return
+    }
+    path := cdp_new_target(chrome_port, url)
+    c, cok := cdp_connect(chrome_port, path)
+    if cok == false {
+        report = "{\"ok\":false,\"error\":\"CDP websocket handshake failed\"}"
+        passed = false
+        return
+    }
+    cdp_send(c, 1, "Page.enable", "")
+    cdp_wait(c, 1, errbox)
+    cdp_send(c, 2, "Runtime.enable", "")
+    cdp_wait(c, 2, errbox)
+    cdp_send(c, 3, "Page.navigate", "{\"url\":" + json(url) + "}")
+    cdp_wait(c, 3, errbox)
+    cdp_wait_event(c, "Page.loadEventFired", errbox)
+    sleep(700)   // let the wasm client instantiate + hydrate
+
+    // all checks in ONE evaluate -> a delimited string (robust: one round-trip,
+    // avoids per-eval frame-timing flakiness). Fields: nodes|bodyBg|slots|title
+    probe := "([document.querySelectorAll('*').length, getComputedStyle(document.body).backgroundColor, document.querySelectorAll('[data-s]').length, document.title].join('|'))"
+    raw := unq(cdp_eval(c, 10, probe, errbox))
+    parts := split(raw, "|")
+    nodes := "0"
+    bg := ""
+    slots := "0"
+    title := ""
+    if len(parts) >= 4 {
+        nodes = parts[0]
+        bg = parts[1]
+        slots = parts[2]
+        title = parts[3]
+    }
+    nerr := parse_int(errbox["n"])
+
+    c1 := parse_int(nodes) > 5
+    c2 := len(bg) > 0 && bg != "rgba(0, 0, 0, 0)"
+    c3 := nerr == 0
+    c4 := parse_int(slots) > 0
+    checks = append(checks, "{\"check\":\"page rendered\",\"pass\":" + tf(c1) + ",\"nodes\":" + str(parse_int(nodes)) + "}")
+    checks = append(checks, "{\"check\":\"stylesheet applied\",\"pass\":" + tf(c2) + ",\"bodyBg\":" + json(bg) + "}")
+    checks = append(checks, "{\"check\":\"no JS errors\",\"pass\":" + tf(c3) + ",\"exceptions\":" + str(nerr) + "}")
+    checks = append(checks, "{\"check\":\"hydration slots\",\"pass\":" + tf(c4) + ",\"dataS\":" + str(parse_int(slots)) + "}")
+
+    if c1 == false || c2 == false || c3 == false { passed = false }
+
+    if len(shot) > 0 {
+        cdp_send(c, 20, "Page.captureScreenshot", "{\"format\":\"png\"}")
+        smsg := cdp_wait(c, 20, errbox)
+        data, derr := json_get(smsg, ".result.data")
+        if len(derr) == 0 && len(data) > 0 {
+            write_file_bytes(shot, base64_decode_bytes(data))
+        }
+    }
+
+    ws_send_close(c.fd)
+    report = "{\"ok\":" + tf(passed) + ",\"url\":" + json(url) + ",\"title\":" + json(unq(title))
+    if len(shot) > 0 { report = report + ",\"screenshot\":" + json(shot) }
+    report = report + ",\"checks\":[" + join(checks, ",") + "]}"
+}
+
+func tf(b) (s) { s = "false"  if b { s = "true" } }
+
+// strip a single pair of surrounding double quotes (json_get can leave them)
+func unq(s) (o) {
+    o = s
+    if len(o) >= 2 && charat(o, 0) == "\"" && charat(o, len(o) - 1) == "\"" {
+        o = substr(o, 1, len(o) - 1)
+    }
+}

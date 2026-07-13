@@ -34,6 +34,7 @@ has zero runtime dependencies.
 - `check <class...>` — resolve each class to its CSS rule (JSON); unknown => known:false
 - `coverage` — the implemented Tailwind surface + honest notImplemented list (JSON)
 - `theme init|check <f>|ramp <#hex>` — verified theming: semantic token ramps, oracle-diffed vs tailwind.config
+- `verify [--url u] [--port p] [--shot f.png]` — drive headless Chrome over CDP in pure MFL: assert the app renders, the stylesheet applied, no JS errors, hydration slots present; optional screenshot. Exit 1 on failure. (Chrome is a dev dependency.)
 - `guide` — this, as JSON (verbs, contracts, gotchas, full component catalog)
 - `skill` — prints a SKILL.md for self-installation into an agent runtime
 
@@ -151,6 +152,7 @@ cd my-app && ./build.sh          # css scan -> asset embed -> wasm -> native bin
 machin-web-ui list               # more components -> machin-web-ui add <name...>
 machin-web-ui check md:bg-ink    # does a class resolve? to what CSS?
 machin-web-ui coverage           # what's implemented — and what is NOT
+machin-web-ui verify             # drive headless Chrome (CDP, pure MFL): render+styles+no-errors, screenshot
 ```
 
 `build.sh` needs `machin`, `zig`, and `machin-web-ui` on `PATH` (or

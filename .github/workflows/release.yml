@@ -36,7 +36,7 @@ jobs:
           TAG="${GITHUB_REF_NAME}"
           python3 tools/gen_embed.py   # writes src/embed_gen.src (gitignored, generated)
           machin encode src/tw_palette.src src/tw_preflight.src src/tw_static_gen.src \
-            src/embed_gen.src src/theme.src src/tw.src src/scan.src src/cli.src > machin-web-ui.mfl
+            framework/ws.src src/embed_gen.src src/theme.src src/tw.src src/scan.src src/verify.src src/cli.src > machin-web-ui.mfl
           mkdir -p dist
           build() {  # os arch zig-target ext
             local name="dist/machin-web-ui-${1}-${2}${4}"

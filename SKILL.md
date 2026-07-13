@@ -30,6 +30,7 @@ machin-web-ui guide        # full JSON: verbs, contracts, gotchas, component cat
 machin-web-ui coverage     # the implemented Tailwind surface + honest notImplemented
 machin-web-ui list         # the component registry
 machin-web-ui check <cls>  # does a class resolve? to what CSS?
+machin-web-ui verify       # drive headless Chrome (CDP, pure MFL) and prove the app works
 ```
 
 ## The journey
