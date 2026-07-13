@@ -30,6 +30,22 @@ server + wasm client), drive it in a real headless Chrome — SSR first paint,
 wasm hydration, reactive click patches, toast, computed styles from the
 generated stylesheet — all asserted.
 
+## For agents
+
+The binary is the documentation. No docs site.
+
+```sh
+machin-web-ui guide        # verbs, contracts, gotchas, full component catalog (JSON)
+machin-web-ui help-json    # verbs + version
+machin-web-ui skill        # a SKILL.md you can self-install
+machin-web-ui coverage     # the implemented Tailwind surface (and what's NOT)
+```
+
+Discovery: [`llms.txt`](llms.txt) (concise) and [`llms-full.txt`](llms-full.txt)
+sit at the repo root and on the [live site](https://javimosch.github.io/machin-web-ui/llms.txt);
+the full operator manual is [AGENTS.md](AGENTS.md). Install via a GitHub
+release binary (`releases/latest`) — no build-from-source required.
+
 ## The CLI
 
 ```sh
