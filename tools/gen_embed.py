@@ -20,12 +20,26 @@ for p in sorted(tpl.rglob("*")):
         lines.append(f"    m[{json.dumps(rel)}] = {json.dumps(p.read_text())}")
 lines.append("}")
 
-comps, descs = {}, {}
+comps, descs, sigs, hosts = {}, {}, {}, {}
 for p in sorted((ROOT / "components").glob("*.src")):
     name = p.stem
-    comps[name] = p.read_text()
-    m = re.match(r"//\s*\S+\s+—\s+(.+)", comps[name].splitlines()[0])
+    src = p.read_text()
+    comps[name] = src
+    m = re.match(r"//\s*\S+\s+—\s+(.+)", src.splitlines()[0])
     descs[name] = m.group(1).strip() if m else ""
+    # exported-ish component functions: `func ui_x(args) (ret) {`
+    fns = re.findall(r"^func (ui_[a-z0-9_]+)\(([^)]*)\)", src, re.M)
+    sigs[name] = "; ".join(f"{fn}({args})" for fn, args in fns)
+    # host effects the component's markup relies on (data-action/data-input/
+    # data-* + slots) — scanned from the source for the agent contract
+    h = []
+    if "data-action" in src: h.append("data-action->export")
+    if "data-input" in src: h.append("data-input->export(value)")
+    if "data-copy" in src: h.append("data-copy->clipboard")
+    if "data-combo" in src: h.append("data-combo host wiring")
+    if "data-s=" in src: h.append("data-s slot (dom_patch)")
+    if "dom_show" in "".join([]) : pass
+    hosts[name] = ", ".join(h)
 
 lines += ["func embed_components() (m) {", "    m = make(map[string]string)"]
 for n, c in comps.items():
@@ -35,6 +49,18 @@ lines += ["func embed_component_descs() (m) {", "    m = make(map[string]string)
 for n, d in descs.items():
     lines.append(f"    m[{json.dumps(n)}] = {json.dumps(d)}")
 lines.append("}")
+lines += ["func embed_component_sigs() (m) {", "    m = make(map[string]string)"]
+for n, sg in sigs.items():
+    lines.append(f"    m[{json.dumps(n)}] = {json.dumps(sg)}")
+lines.append("}")
+lines += ["func embed_component_hosts() (m) {", "    m = make(map[string]string)"]
+for n, hh in hosts.items():
+    lines.append(f"    m[{json.dumps(n)}] = {json.dumps(hh)}")
+lines.append("}")
+
+# embed SKILL.md so `machin-web-ui skill` can print it (self-installing)
+skill = (ROOT / "SKILL.md").read_text()
+lines += ["func embed_skill() (s) { s = " + json.dumps(skill) + " }"]
 
 (ROOT / "src/embed_gen.src").write_text("\n".join(lines) + "\n")
 print(f"{sum(1 for p in tpl.rglob('*') if p.is_file())} template files, {len(comps)} components -> src/embed_gen.src")

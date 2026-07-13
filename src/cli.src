@@ -30,6 +30,69 @@ func usage() {
     println("  machin-web-ui css - [--no-preflight]                         class list on stdin -> stylesheet")
     println("  machin-web-ui coverage                                       implemented Tailwind surface (JSON)")
     println("  machin-web-ui check <class...>                               resolve classes (JSON)")
+    println("  machin-web-ui guide                                          full agent guide: verbs, contracts, components (JSON)")
+    println("  machin-web-ui help-json                                      verbs + flags (JSON, agent-first convention)")
+    println("  machin-web-ui skill                                          print this framework's SKILL.md (self-installing)")
+    println("  machin-web-ui version                                        version string")
+}
+
+func mwu_version() (v) { v = "0.2.0" }
+
+// cmd_list_full: the component catalog with signatures + host contracts
+func components_json() (s) {
+    descs := embed_component_descs()
+    sigs := embed_component_sigs()
+    hosts := embed_component_hosts()
+    items := []string{}
+    for _, nm := range sort_strings(keys(descs)) {
+        it := "    {\"name\": \"" + nm + "\", \"description\": \"" + json_escape(descs[nm]) + "\""
+        it = it + ", \"functions\": \"" + json_escape(sigs[nm]) + "\""
+        if len(hosts[nm]) > 0 { it = it + ", \"hostEffects\": \"" + json_escape(hosts[nm]) + "\"" }
+        it = it + "}"
+        items = append(items, it)
+    }
+    s = "[\n" + join(items, ",\n") + "\n  ]"
+}
+
+func cmd_guide() {
+    o := "{\n"
+    o = o + "  \"tool\": \"machin-web-ui\",\n"
+    o = o + "  \"version\": \"" + mwu_version() + "\",\n"
+    o = o + "  \"tagline\": \"agent-first design system for isomorphic machin apps: scaffold + vendor components + a pure-MFL Tailwind engine, one static binary, no Node\",\n"
+    o = o + "  \"journey\": [\"init a themed app\", \"add components (vendored source you own)\", \"write Tailwind classes in .src\", \"css to (re)generate the stylesheet\", \"check/coverage before shipping a class\", \"build.sh -> native server + wasm client\"],\n"
+    o = o + "  \"verbs\": [\n"
+    o = o + "    {\"verb\": \"init [dir]\", \"does\": \"scaffold an isomorphic app (SSR machweb server + reactive wasm client + starter components + theme.json); builds out of the box\"},\n"
+    o = o + "    {\"verb\": \"add <name...>\", \"does\": \"vendor component source into ./components/ (you own it, edit it)\"},\n"
+    o = o + "    {\"verb\": \"list\", \"does\": \"component registry (name+description JSON)\"},\n"
+    o = o + "    {\"verb\": \"css [paths] [-o f] [--no-preflight] [--dark-class] [--theme t.json]\", \"does\": \"scan .src/.mfl/.html/.js for classes -> stylesheet; '-' reads an explicit class list on stdin\"},\n"
+    o = o + "    {\"verb\": \"check <class...>\", \"does\": \"resolve each class to its CSS rule (JSON); unknown => known:false\"},\n"
+    o = o + "    {\"verb\": \"coverage\", \"does\": \"the implemented Tailwind surface + honest notImplemented list (JSON)\"},\n"
+    o = o + "    {\"verb\": \"theme init|check <f>|ramp <#hex>\", \"does\": \"verified theming: semantic token ramps, oracle-diffed vs tailwind.config\"}\n"
+    o = o + "  ],\n"
+    o = o + "  \"contracts\": {\n"
+    o = o + "    \"isomorphic\": \"a component is one MFL func; the server calls it for SSR, the wasm client calls the SAME func inside hydrate() and binds to matching data-s slots — no re-render, no drift\",\n"
+    o = o + "    \"clicks\": \"a data-action=x button calls export func x(arg); data-input=x forwards input events to export func x(value); add behavior = add an export + a data-attr\",\n"
+    o = o + "    \"slots\": \"slot(name, fn) emits <span data-s=name>; the client patches it via dom_patch; the SSR server renders the same span so hydration reuses it\",\n"
+    o = o + "    \"reRender\": \"for markup-level (not text) updates call dom_mount(containerId, html) directly from client code (calendar/table/chips/toasts do this)\",\n"
+    o = o + "    \"theming\": \"components speak semantic tokens (canvas surface ink muted line accent ok warn danger info); theme.json remaps them; the default theme aliases the stone look\",\n"
+    o = o + "    \"dynamicClassTrap\": \"the scanner sees LITERAL class strings only — never build class names by interpolation (h-[${n}] wont be scanned); for data-driven geometry use inline SVG attributes or inline style\"\n"
+    o = o + "  },\n"
+    o = o + "  \"gotchas\": [\n"
+    o = o + "    \"peer-checked: styled element must be a SIBLING of the sr-only input, not nested\",\n"
+    o = o + "    \"a data-action on a <label> fires twice per click (label forwards a synthetic click to its input) — put it on the input\",\n"
+    o = o + "    \"unknown classes in an explicit list are reported loud in a /* tw-unknown */ header; in file-scan mode they skip silently (Tailwind JIT semantics)\"\n"
+    o = o + "  ],\n"
+    o = o + "  \"components\": " + components_json() + ",\n"
+    o = o + "  \"docs\": {\"repo\": \"https://github.com/javimosch/machin-web-ui\", \"gallery\": \"https://javimosch.github.io/machin-web-ui/\", \"vision\": \"docs/VISION.md\", \"language\": \"https://github.com/javimosch/machin\"}\n"
+    o = o + "}"
+    println(o)
+}
+
+func cmd_help_json() {
+    o := "{\"tool\": \"machin-web-ui\", \"version\": \"" + mwu_version() + "\", \"verbs\": ["
+    o = o + "\"init\", \"add\", \"list\", \"css\", \"check\", \"coverage\", \"theme\", \"guide\", \"help-json\", \"skill\", \"version\"], "
+    o = o + "\"guide\": \"run `machin-web-ui guide` for the full JSON: verbs, contracts, gotchas, component catalog with signatures\"}"
+    println(o)
 }
 
 // mkdirs creates every directory along a path ("a/b/c", absolute ok)
@@ -298,6 +361,10 @@ func main() {
     }
     else if verb == "list" { cmd_list() }
     else if verb == "theme" { cmd_theme(a) }
+    else if verb == "guide" { cmd_guide() }
+    else if verb == "help-json" { cmd_help_json() }
+    else if verb == "skill" { print(embed_skill()) }
+    else if verb == "version" { println(mwu_version()) }
     else if verb == "coverage" { cmd_coverage() }
     else if verb == "check" {
         if len(a) < 3 { usage()  exit(2) }

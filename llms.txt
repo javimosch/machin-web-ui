@@ -1,0 +1,60 @@
+# machin-web-ui
+
+> agent-first design system for isomorphic machin apps: scaffold + vendor components + a pure-MFL Tailwind engine, one static binary, no Node
+
+Version 0.2.0. The binary is the source of truth — everything here is
+`machin-web-ui guide` / `coverage` / `list` output. Repo:
+https://github.com/javimosch/machin-web-ui · live gallery: https://javimosch.github.io/machin-web-ui/
+
+## Install
+
+```
+curl -L https://github.com/javimosch/machin-web-ui/releases/latest/download/machin-web-ui-linux-amd64 -o machin-web-ui
+chmod +x machin-web-ui && sudo mv machin-web-ui /usr/local/bin/
+```
+
+Also needs `machin` and `zig` on PATH for `build.sh`. The shipped app binary
+has zero runtime dependencies.
+
+## Journey
+
+- init a themed app
+- add components (vendored source you own)
+- write Tailwind classes in .src
+- css to (re)generate the stylesheet
+- check/coverage before shipping a class
+- build.sh -> native server + wasm client
+
+## Verbs
+
+- `init [dir]` — scaffold an isomorphic app (SSR machweb server + reactive wasm client + starter components + theme.json); builds out of the box
+- `add <name...>` — vendor component source into ./components/ (you own it, edit it)
+- `list` — component registry (name+description JSON)
+- `css [paths] [-o f] [--no-preflight] [--dark-class] [--theme t.json]` — scan .src/.mfl/.html/.js for classes -> stylesheet; '-' reads an explicit class list on stdin
+- `check <class...>` — resolve each class to its CSS rule (JSON); unknown => known:false
+- `coverage` — the implemented Tailwind surface + honest notImplemented list (JSON)
+- `theme init|check <f>|ramp <#hex>` — verified theming: semantic token ramps, oracle-diffed vs tailwind.config
+- `guide` — this, as JSON (verbs, contracts, gotchas, full component catalog)
+- `skill` — prints a SKILL.md for self-installation into an agent runtime
+
+## Contracts
+
+- **isomorphic**: a component is one MFL func; the server calls it for SSR, the wasm client calls the SAME func inside hydrate() and binds to matching data-s slots — no re-render, no drift
+- **clicks**: a data-action=x button calls export func x(arg); data-input=x forwards input events to export func x(value); add behavior = add an export + a data-attr
+- **slots**: slot(name, fn) emits <span data-s=name>; the client patches it via dom_patch; the SSR server renders the same span so hydration reuses it
+- **reRender**: for markup-level (not text) updates call dom_mount(containerId, html) directly from client code (calendar/table/chips/toasts do this)
+- **theming**: components speak semantic tokens (canvas surface ink muted line accent ok warn danger info); theme.json remaps them; the default theme aliases the stone look
+- **dynamicClassTrap**: the scanner sees LITERAL class strings only — never build class names by interpolation (h-[${n}] wont be scanned); for data-driven geometry use inline SVG attributes or inline style
+
+## Gotchas
+
+- peer-checked: styled element must be a SIBLING of the sr-only input, not nested
+- a data-action on a <label> fires twice per click (label forwards a synthetic click to its input) — put it on the input
+- unknown classes in an explicit list are reported loud in a /* tw-unknown */ header; in file-scan mode they skip silently (Tailwind JIT semantics)
+
+## Optional
+
+- Full operator manual: https://github.com/javimosch/machin-web-ui/blob/main/AGENTS.md
+- llms-full.txt (this + the complete component catalog + AGENTS.md)
+- Vision / north star: https://github.com/javimosch/machin-web-ui/blob/main/docs/VISION.md
+- The language (machin/MFL): https://github.com/javimosch/machin

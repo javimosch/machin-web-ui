@@ -5,5 +5,6 @@ cd "$(dirname "$0")"
 mkdir -p ../docs
 ./app --render > ../docs/index.html
 cp app.wasm ../docs/app.wasm
+python3 ../tools/gen_llms.py >/dev/null || true
 touch ../docs/.nojekyll
 echo "exported ../docs ($(wc -c < ../docs/index.html)B html + $(wc -c < ../docs/app.wasm)B wasm)"

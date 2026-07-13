@@ -1,0 +1,71 @@
+name: release
+
+# Cut a release by pushing a version tag:
+#   git tag v0.2.0 && git push origin v0.2.0
+# machin compiles MFL through C, so each target is built with `zig cc` as a
+# cross-compiler. Binaries (+ SHA256SUMS.txt) attach to the tag's release.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install machin + zig
+        run: |
+          set -euo pipefail
+          # zig (the C compiler machin shells out to)
+          ZIG=0.13.0
+          curl -sSL "https://ziglang.org/download/${ZIG}/zig-linux-x86_64-${ZIG}.tar.xz" | tar -xJ
+          echo "$PWD/zig-linux-x86_64-${ZIG}" >> "$GITHUB_PATH"
+          # machin from source (the release binary of the day may lag)
+          git clone --depth 1 https://github.com/javimosch/machin.git /tmp/machin
+          ( cd /tmp/machin && go build -o /usr/local/bin/machin . )
+
+      - name: Build binaries
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          machin encode src/tw_palette.src src/tw_preflight.src src/tw_static_gen.src \
+            src/embed_gen.src src/theme.src src/tw.src src/scan.src src/cli.src > machin-web-ui.mfl
+          mkdir -p dist
+          build() {  # os arch zig-target ext
+            local name="dist/machin-web-ui-${1}-${2}${4}"
+            printf '#!/bin/sh\nexec zig cc -target %s "$@"\n' "$3" > /tmp/cc-$2 && chmod +x /tmp/cc-$2
+            echo "building $name"
+            CC="/tmp/cc-$2" machin build machin-web-ui.mfl -o "$name"
+          }
+          build linux  amd64 x86_64-linux-musl  ""
+          build linux  arm64 aarch64-linux-musl ""
+          build darwin amd64 x86_64-macos       ""
+          build darwin arm64 aarch64-macos      ""
+          ( cd dist && sha256sum machin-web-ui-* > SHA256SUMS.txt )
+          ls -l dist
+
+      - name: Regenerate the site's llms.txt from this version's binary
+        run: |
+          set -euo pipefail
+          python3 tools/gen_embed.py >/dev/null
+          machin build machin-web-ui.mfl -o ./machin-web-ui
+          python3 tools/gen_llms.py
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* --generate-notes \
+              --title "machin-web-ui $TAG"
+          fi
