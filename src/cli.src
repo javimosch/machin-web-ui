@@ -85,7 +85,7 @@ func cmd_guide() {
     o = o + "    \"unknown classes in an explicit list are reported loud in a /* tw-unknown */ header; in file-scan mode they skip silently (Tailwind JIT semantics)\"\n"
     o = o + "  ],\n"
     o = o + "  \"components\": " + components_json() + ",\n"
-    o = o + "  \"docs\": {\"repo\": \"https://github.com/javimosch/machin-web-ui\", \"gallery\": \"https://javimosch.github.io/machin-web-ui/\", \"vision\": \"docs/VISION.md\", \"maintaining\": \"docs/MAINTAINING.md (how to extend/fix the framework)\", \"language\": \"https://github.com/javimosch/machin\"}\n"
+    o = o + "  \"docs\": {\"repo\": \"https://github.com/javimosch/machin-web-ui\", \"gallery\": \"https://javimosch.github.io/machin-web-ui/\", \"vision\": \"docs/VISION.md\", \"agents\": \"AGENTS.md (maintainer guide: extend/fix the framework)\", \"skill\": \"SKILL.md (use machin-web-ui to build apps)\", \"language\": \"https://github.com/javimosch/machin\"}\n"
     o = o + "}"
     println(o)
 }

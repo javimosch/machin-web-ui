@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate llms.txt (concise) + llms-full.txt (with the guide + AGENTS.md)
+"""Generate llms.txt (concise) + llms-full.txt (with the guide + SKILL.md)
 from the built binary — the agent discovery layer. Written to both the repo
 root and the exported gallery (docs/) so a deployed app advertises the trail.
 Run after building ./machin-web-ui."""
@@ -10,7 +10,7 @@ BIN = ROOT / "machin-web-ui"
 
 guide = json.loads(subprocess.run([str(BIN), "guide"], capture_output=True, text=True).stdout)
 coverage = json.loads(subprocess.run([str(BIN), "coverage"], capture_output=True, text=True).stdout)
-agents = (ROOT / "AGENTS.md").read_text()
+skill = (ROOT / "SKILL.md").read_text()
 version = guide["version"]
 
 comp_lines = "\n".join(
@@ -55,8 +55,8 @@ has zero runtime dependencies.
 
 ## Optional
 
-- Full operator manual: {guide['docs']['repo']}/blob/main/AGENTS.md
-- llms-full.txt (this + the complete component catalog + AGENTS.md)
+- Using machin-web-ui: {guide['docs']['repo']}/blob/main/SKILL.md\n- Maintaining the framework: {guide['docs']['repo']}/blob/main/AGENTS.md
+- llms-full.txt (this + the complete component catalog + SKILL.md)
 - Vision / north star: {guide['docs']['repo']}/blob/main/docs/VISION.md
 - The language (machin/MFL): {guide['docs']['language']}
 """
@@ -77,9 +77,9 @@ Verification: {coverage['verification']}
 
 ---
 
-# AGENTS.md (full operator manual)
+# SKILL.md — using machin-web-ui
 
-{agents}
+{skill}
 """
 
 targets = [ROOT, ROOT / "docs"]
