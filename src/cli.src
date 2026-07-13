@@ -319,6 +319,7 @@ func cmd_verify(a) {
     report, passed := cdp_verify(url, cport, shot)
     println(report)
     system("pkill -f \"remote-debugging-port=" + str(cport) + "\" >/dev/null 2>&1")
+    system("rm -rf /tmp/mwu-verify-" + str(cport) + " >/dev/null 2>&1")
     if started { system("pkill -f \"--port " + str(port) + "\" >/dev/null 2>&1") }
     if passed == false { exit(1) }
 }

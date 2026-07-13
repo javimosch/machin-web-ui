@@ -62,8 +62,13 @@ func cdp_http(chrome_port, method, path) (body) {
 }
 
 // --- launch + target discovery over the CDP HTTP endpoints ---
+func cdp_profile_dir(chrome_port) (d) { d = "/tmp/mwu-verify-" + str(chrome_port) }
+
 func cdp_launch(chrome_port) (ok) {
+    prof := cdp_profile_dir(chrome_port)
+    system("rm -rf " + prof)   // start clean; no stale SingletonLock from a crashed run
     cmd := "google-chrome --headless=new --no-sandbox --disable-gpu"
+    cmd = cmd + " --user-data-dir=" + prof              // per-run profile: parallel verifies never contend
     cmd = cmd + " --remote-debugging-port=" + str(chrome_port)
     cmd = cmd + " --remote-allow-origins=* --window-size=1200,1400 about:blank"
     cmd = cmd + " >/dev/null 2>&1 &"
