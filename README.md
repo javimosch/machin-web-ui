@@ -178,7 +178,7 @@ bin/tailwindcss        dev-only oracle binary (not committed)
 The durable direction lives in [docs/VISION.md](docs/VISION.md). Working on the
 framework itself? [AGENTS.md](AGENTS.md) is the maintainer guide (the oracle
 discipline, adding components/engine surface, the machin gotchas). Building an
-app *with* it? [SKILL.md](SKILL.md) or `machin-web-ui guide`.
+app *with* it? [SKILL.md](.agents/skills/machin-web-ui/SKILL.md) or `machin-web-ui guide`.
 
 - [x] **M0 spike — tw engine core**, oracle-verified
 - [x] preflight + `.mfl`/`.src` file scanner (`machin-web-ui css`), oracle-verified

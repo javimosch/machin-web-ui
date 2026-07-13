@@ -10,7 +10,7 @@ BIN = ROOT / "machin-web-ui"
 
 guide = json.loads(subprocess.run([str(BIN), "guide"], capture_output=True, text=True).stdout)
 coverage = json.loads(subprocess.run([str(BIN), "coverage"], capture_output=True, text=True).stdout)
-skill = (ROOT / "SKILL.md").read_text()
+skill = (ROOT / ".agents/skills/machin-web-ui/SKILL.md").read_text()
 version = guide["version"]
 
 comp_lines = "\n".join(
@@ -55,7 +55,7 @@ has zero runtime dependencies.
 
 ## Optional
 
-- Using machin-web-ui: {guide['docs']['repo']}/blob/main/SKILL.md\n- Maintaining the framework: {guide['docs']['repo']}/blob/main/AGENTS.md
+- Using machin-web-ui: {guide['docs']['repo']}/blob/main/.agents/skills/machin-web-ui/SKILL.md\n- Maintaining the framework: {guide['docs']['repo']}/blob/main/AGENTS.md
 - llms-full.txt (this + the complete component catalog + SKILL.md)
 - Vision / north star: {guide['docs']['repo']}/blob/main/docs/VISION.md
 - The language (machin/MFL): {guide['docs']['language']}

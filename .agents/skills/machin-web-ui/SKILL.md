@@ -62,5 +62,5 @@ machin-web-ui add dialog table     # vendor component source into ./components/ 
 - Unknown classes: loud in explicit lists, silent in file scan. `check` if
   unsure.
 
-Full manual: `AGENTS.md` in the repo. Vision: `docs/VISION.md`. The language:
+Self-install this skill to `.agents/skills/machin-web-ui/SKILL.md` (or `~/.agents/skills/...`) with `machin-web-ui skill > SKILL.md`. Maintainers: `AGENTS.md` in the repo. Vision: `docs/VISION.md`. The language:
 https://github.com/javimosch/machin

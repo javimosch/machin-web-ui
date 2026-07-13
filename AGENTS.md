@@ -3,7 +3,7 @@
 > **Convention:** this file follows [agents.md](https://agents.md) — instructions
 > for an agent **working on this repository** (i.e. maintaining/extending the
 > framework itself). If instead you want to **build an app** *with* machin-web-ui,
-> that's the [SKILL.md](SKILL.md) (a portable capability) and the binary's own
+> that's the [SKILL.md](.agents/skills/machin-web-ui/SKILL.md) (a portable capability) and the binary's own
 > docs: `machin-web-ui guide` / `coverage` / `list`. `init` scaffolds a
 > user-facing `AGENTS.md` into each app it creates — different file, different
 > audience.

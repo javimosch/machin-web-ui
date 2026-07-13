@@ -59,7 +59,7 @@ for n, hh in hosts.items():
 lines.append("}")
 
 # embed SKILL.md so `machin-web-ui skill` can print it (self-installing)
-skill = (ROOT / "SKILL.md").read_text()
+skill = (ROOT / ".agents/skills/machin-web-ui/SKILL.md").read_text()
 lines += ["func embed_skill() (s) { s = " + json.dumps(skill) + " }"]
 
 (ROOT / "src/embed_gen.src").write_text("\n".join(lines) + "\n")

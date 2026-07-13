@@ -55,7 +55,7 @@ has zero runtime dependencies.
 
 ## Optional
 
-- Using machin-web-ui: https://github.com/javimosch/machin-web-ui/blob/main/SKILL.md
+- Using machin-web-ui: https://github.com/javimosch/machin-web-ui/blob/main/.agents/skills/machin-web-ui/SKILL.md
 - Maintaining the framework: https://github.com/javimosch/machin-web-ui/blob/main/AGENTS.md
 - llms-full.txt (this + the complete component catalog + SKILL.md)
 - Vision / north star: https://github.com/javimosch/machin-web-ui/blob/main/docs/VISION.md
