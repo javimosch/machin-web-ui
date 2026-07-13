@@ -124,7 +124,7 @@ has zero runtime dependencies.
 - **toast** — notifications. Two forms: `ui_toast_classes(kind); ui_toast(id, slot_name, kind, open); ui_toast_stack(id); ui_toast_item(msg, kind, dismiss_action, key)`
 - **tooltip** — hover hint, no JS: the wrapper is a `group`, the bubble is `ui_tooltip(trigger, tip)`
 - **tree** — collapsible tree (file explorers, nested data), no JS: nested `ui_tree_node(label, children); ui_tree_leaf(label); ui_tree(body)`
-- **ui** — base helpers shared by every machin-web-ui component. Vendored into `ui_esc(s); ui_page_classes(); ui_main_classes()`
+- **ui** — base helpers shared by every machin-web-ui component. Vendored into `ui_esc(s); ui_page_classes(); ui_main_classes(); ui_prose_classes()`
 
 ## Tailwind coverage
 
