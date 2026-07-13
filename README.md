@@ -175,7 +175,10 @@ bin/tailwindcss        dev-only oracle binary (not committed)
 
 ## Roadmap
 
-The durable direction lives in [docs/VISION.md](docs/VISION.md).
+The durable direction lives in [docs/VISION.md](docs/VISION.md). Working on the
+framework itself? [docs/MAINTAINING.md](docs/MAINTAINING.md) is the maintainer
+playbook (the oracle discipline, adding components/engine surface, the machin
+gotchas).
 
 - [x] **M0 spike — tw engine core**, oracle-verified
 - [x] preflight + `.mfl`/`.src` file scanner (`machin-web-ui css`), oracle-verified
