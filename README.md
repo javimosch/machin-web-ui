@@ -46,6 +46,19 @@ sit at the repo root and on the [live site](https://javimosch.github.io/machin-w
 the full operator manual is [AGENTS.md](AGENTS.md). Install via a GitHub
 release binary (`releases/latest`) — no build-from-source required.
 
+## Install
+
+Four platforms are published on every release, all statically linked — no
+runtime dependencies, no glibc floor:
+
+```sh
+# pick your platform: linux-amd64, linux-arm64, darwin-amd64, darwin-arm64
+curl -fsSL https://github.com/javimosch/machin-web-ui/releases/latest/download/machin-web-ui-linux-amd64 -o machin-web-ui
+chmod +x machin-web-ui && ./machin-web-ui list
+```
+
+`SHA256SUMS.txt` ships alongside them if you want to verify.
+
 ## The CLI
 
 ```sh
