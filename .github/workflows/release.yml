@@ -51,6 +51,23 @@ jobs:
           ( cd dist && sha256sum machin-web-ui-* > SHA256SUMS.txt )
           ls -l dist
 
+          # The linux artifacts must be STATIC. They are today because the zig
+          # cross-compile targets musl — but nothing said so, and an estate-wide
+          # install audit found sibling projects publishing dynamically linked
+          # binaries under READMEs promising the opposite (glibc 2.34 floors,
+          # dead on Debian 11, Ubuntu 20.04, RHEL 8 and Alpine).
+          #
+          # Asserted rather than re-specified, so this keeps holding whatever the
+          # build method becomes. `ldd` EXITS 1 on a static binary, so capture
+          # its output instead of piping into grep under `set -e`.
+          for f in dist/machin-web-ui-linux-*; do
+            LDD_OUT=$(ldd "$f" 2>&1 || true)
+            case "$LDD_OUT" in
+              *"not a dynamic executable"*|*"statically linked"*) echo "static ok: $f" ;;
+              *) echo "NOT STATIC: $f -> $LDD_OUT"; exit 1 ;;
+            esac
+          done
+
       - name: Regenerate the site's llms.txt from this version's binary
         run: |
           set -euo pipefail
