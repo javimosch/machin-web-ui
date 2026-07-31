@@ -59,6 +59,11 @@ chmod +x machin-web-ui && ./machin-web-ui list
 
 `SHA256SUMS.txt` ships alongside them if you want to verify.
 
+`machin-web-ui telemetry` shows exactly what it reports about itself: version,
+os/arch, which verb ran, exit class — **never your classes, components, markup
+or paths**. Disable with `MACHIN_WEB_UI_TELEMETRY=0` or `DO_NOT_TRACK=1`; CI is
+off by default. [cli-telemetry-spec](https://github.com/javimosch/cli-telemetry-spec).
+
 ## The CLI
 
 ```sh
