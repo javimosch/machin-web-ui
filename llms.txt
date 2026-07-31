@@ -2,7 +2,7 @@
 
 > agent-first design system for isomorphic machin apps: scaffold + vendor components + a pure-MFL Tailwind engine, one static binary, no Node
 
-Version 0.3.0. The binary is the source of truth — everything here is
+Version 0.2.0. The binary is the source of truth — everything here is
 `machin-web-ui guide` / `coverage` / `list` output. Repo:
 https://github.com/javimosch/machin-web-ui · live gallery: https://javimosch.github.io/machin-web-ui/
 

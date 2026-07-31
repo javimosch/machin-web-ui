@@ -37,7 +37,7 @@ func usage() {
     println("  machin-web-ui version                                        version string")
 }
 
-func mwu_version() (v) { v = "0.3.0" }
+func mwu_version() (v) { v = "0.2.0" }
 
 // cmd_list_full: the component catalog with signatures + host contracts
 func components_json() (s) {
@@ -405,21 +405,9 @@ func main() {
         if len(a) < 3 { usage()  exit(2) }
         cmd_check(a)
     }
-    else if verb == "telemetry" {
-        if tel_hasflag(a, "--telemetry-off") == 1 {
-            td, tok := tel_set(0)
-            println(td)
-            if tok == 0 { exit(90) }
-        }
-        else if tel_hasflag(a, "--telemetry-on") == 1 { td, tok := tel_set(1)  println(td) }
-        else { println(tel_status_json()) }
-    }
     else if verb == "help" || verb == "--help" || verb == "-h" { usage() }
     else {
         usage()
-        tel_report(verb, 80)
         exit(2)
     }
-    // After the verb finished and its output is on stdout.
-    tel_report(verb, 0)
 }
